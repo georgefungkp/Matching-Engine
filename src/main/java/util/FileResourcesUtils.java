@@ -6,20 +6,23 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.List;
 
-public class FileResourcesUtils {
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-    public static void main(String[] args) throws IOException, URISyntaxException {
+public class FileResourcesUtils {
+    private static final Logger log = LogManager.getLogger(FileResourcesUtils.class);
+    public static void main(String[] args) throws URISyntaxException {
 
         FileResourcesUtils app = new FileResourcesUtils();
 
         //String fileName = "database.properties";
         String fileName = "json/file1.json";
 
-        System.out.println("getResourceAsStream : " + fileName);
+        log.debug("getResourceAsStream : " + fileName);
         InputStream is = app.getFileFromResourceAsStream(fileName);
         printInputStream(is);
 
-        System.out.println("\ngetResource : " + fileName);
+        log.debug("getResource : {}", fileName);
         File file = app.getFileFromResource(fileName);
         printFile(file);
 
@@ -74,11 +77,11 @@ public class FileResourcesUtils {
 
             String line;
             while ((line = reader.readLine()) != null) {
-                System.out.println(line);
+                log.debug(line);
             }
 
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error(e);
         }
 
     }
@@ -91,7 +94,7 @@ public class FileResourcesUtils {
             lines = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
             lines.forEach(System.out::println);
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error(e);
         }
 
     }

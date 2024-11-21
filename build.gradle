@@ -16,8 +16,33 @@ dependencies {
     implementation 'org.slf4j:slf4j-nop:2.0.7'
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.18.1'
     implementation 'io.github.cdimascio:java-dotenv:5.2.2'
+    // Log4j API
+    implementation 'org.apache.logging.log4j:log4j-api:2.14.1'
+    // Log4j Core (implementation of the API)
+    implementation 'org.apache.logging.log4j:log4j-core:2.14.1'
+    // Log4j SLF4J Binding
+    implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.14.1'
 }
 
 test {
     useJUnitPlatform()
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src/main/java']
+        }
+        resources {
+            srcDirs = ['src/main/resources']
+        }
+    }
+    test {
+        java {
+            srcDirs = ['src/test/java']
+        }
+        resources {
+            srcDirs = ['src/test/resources']
+        }
+    }
 }

@@ -8,12 +8,16 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import equity.client.Client;
 import equity.vo.MarketData;
 import equity.vo.OrderRequest;
 import equity.vo.OrderBooksForStock;
 import equity.vo.Trade;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class OrderProcessingJob implements Runnable {
+	private static final Logger log = LogManager.getLogger(OrderProcessingJob.class);
 	private static int noOfStock = 10;
 	// First element is stock 1, 2nd element is stock 2, ....
 	List<OrderBooksForStock> listOfStocks = new ArrayList<OrderBooksForStock>(noOfStock);
@@ -39,13 +43,13 @@ public class OrderProcessingJob implements Runnable {
 	public void run() {
 		createOrderBook();
 		while (true) {
-			System.out.println("Getting order from Queue");
+			log.debug("Getting order from Queue");
 			try {
 				OrderRequest orderReq = orderQueue.take();
-				if (listOfStocks.size() < Integer.parseInt(orderReq.getStockNo())) {
-					System.out.println("Stock no is incorrect. Order is ignored");
+				if (listOfStocks.size() < Integer.parseInt(orderReq.stockNo())) {
+					log.debug("Stock no is incorrect. Order is ignored");
 				} else {
-					OrderBooksForStock stock = listOfStocks.get(Integer.parseInt(orderReq.getStockNo()) - 1);
+					OrderBooksForStock stock = listOfStocks.get(Integer.parseInt(orderReq.stockNo()) - 1);
 					List<Trade> tradeList = stock.addBid(orderReq);
 
 					Optional<BigDecimal> nominalAmt = Optional.empty();
@@ -66,7 +70,7 @@ public class OrderProcessingJob implements Runnable {
 					}
 				}
 			} catch (InterruptedException e) {
-				e.printStackTrace();
+				log.error(e);
 			}
 		}
 

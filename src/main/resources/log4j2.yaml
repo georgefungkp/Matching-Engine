@@ -1,0 +1,20 @@
+Configuration:
+  name: Default
+  status: warn
+  Appenders:
+    Console:
+      name: Console
+      target: SYSTEM_OUT
+      PatternLayout:
+        Pattern: "%d{HH:mm:ss} [%t] %-5level %logger{36} - %msg%n"
+    File:
+      name: File
+      fileName: logs/app.log
+      PatternLayout:
+        Pattern: "%d{yyy-MM-dd HH:mm:ss} [%t] %-5level %logger{36} - %msg%n"
+  Loggers:
+    Root:
+      level: debug
+      AppenderRef:
+        - ref: Console
+        - ref: File
