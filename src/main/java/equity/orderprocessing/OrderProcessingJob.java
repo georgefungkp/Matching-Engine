@@ -1,5 +1,12 @@
 package equity.orderprocessing;
 
+import equity.vo.MarketData;
+import equity.vo.OrderBooksForStock;
+import equity.vo.OrderRequest;
+import equity.vo.Trade;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -8,19 +15,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import equity.client.Client;
-import equity.vo.MarketData;
-import equity.vo.OrderRequest;
-import equity.vo.OrderBooksForStock;
-import equity.vo.Trade;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 public class OrderProcessingJob implements Runnable {
 	private static final Logger log = LogManager.getLogger(OrderProcessingJob.class);
 	private static int noOfStock = 10;
 	// First element is stock 1, 2nd element is stock 2, ....
-	List<OrderBooksForStock> listOfStocks = new ArrayList<OrderBooksForStock>(noOfStock);
+	List<OrderBooksForStock> listOfStocks = new ArrayList<>(noOfStock);
 	private LinkedBlockingQueue<OrderRequest> orderQueue;
 	private LinkedBlockingQueue<MarketData> marketDataQueue;
 	private LinkedBlockingQueue<Trade> resultingTradeQueue;
@@ -35,7 +34,7 @@ public class OrderProcessingJob implements Runnable {
 	private void createOrderBook() {
 		for (int i = 1; i <= noOfStock; i++) {
 			listOfStocks.add(
-					new OrderBooksForStock(String.format("%05d", i), new BigDecimal(1), String.valueOf("Stock " + i)));
+					new OrderBooksForStock(String.format("%05d", i), new BigDecimal(1), "Stock " + i));
 		}
 	}
 
@@ -54,16 +53,14 @@ public class OrderProcessingJob implements Runnable {
 
 					Optional<BigDecimal> nominalAmt = Optional.empty();
 					for (Trade trade : tradeList) {
-						if (!nominalAmt.isPresent() || nominalAmt.get().compareTo(trade.getPrice()) < 0) {
+						if (nominalAmt.isEmpty() || nominalAmt.get().compareTo(trade.getPrice()) < 0) {
 							nominalAmt = Optional.of(trade.getPrice());
 						}
 					}
-					if (nominalAmt.isPresent()) {
-						stock.setNominalPrice(nominalAmt.get());
-					}
+                    nominalAmt.ifPresent(stock::setNominalPrice);
 					marketDataQueue.put(new MarketData(stock.getStockNo(), stock.getBestBid(), stock.getBestAsk(),
 							stock.getNominalPrice(), Timestamp.from(Instant.now()), stock.getBidMap(), stock.getAskMap()));
-					if (tradeList.size() > 0) {
+					if (!tradeList.isEmpty()) {
 						for (Trade trade : tradeList) {
 							resultingTradeQueue.put(trade);
 						}
