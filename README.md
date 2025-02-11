@@ -17,6 +17,6 @@ This project implements a Matching Engine, a key component in trading platforms 
 
 List here the prerequisites and links to the installation procedure of each:
 
-- [Java SDK]([https://www.example.com](https://www.oracle.com/java/technologies/downloads/))
+- [Java SDK](https://www.example.com](https://www.oracle.com/java/technologies/downloads/))
 - An IDE of your choice (Although this project was developed using Intellij IDEA)
 
