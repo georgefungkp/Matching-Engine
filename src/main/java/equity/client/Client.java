@@ -19,19 +19,16 @@ public class Client {
 	private static final Logger log = LogManager.getLogger(Client.class);
 	public static ExecutorService executor = Executors.newFixedThreadPool(5);
 
-//	private static String serverName = "localhost";
-//	private static int port = 8080;
-
 	public static void main(String[] args) {
 		for (int i = 0; i < 1; i++) {
-			executor.submit(() -> {
+			executor.execute(() -> {
 				try {
-					OrderRequest order = new OrderRequest();
+					RandomOrderRequest order = new RandomOrderRequest();
 					Socket client = new Socket(dotenv.get("server"), Integer.parseInt(Objects.requireNonNull(dotenv.get("port_number"))));
                     log.debug("Thread {} connected to {} on port {}", Thread.currentThread().getName(), dotenv.get("server"), dotenv.get("port_number"));
 					final String response = sendOrderToServer(client, order);
 
-					log.debug("r:" + response);
+					log.debug(response);
 //					Thread.sleep(1000);
 					client.close();
 
@@ -50,15 +47,15 @@ public class Client {
 
 	}
 
-	private static @NotNull String sendOrderToServer(Socket client, OrderRequest order) throws IOException {
+	private static @NotNull String sendOrderToServer(Socket client, RandomOrderRequest order) throws IOException {
 		DataOutputStream outToServer = new DataOutputStream(client.getOutputStream());
 		//Stock No: Broker ID: Order Type: B/S: Price: Quantity
 		String message = order.getStockNo() + ":" + order.getBrokerId() + ":" + order.getOrderType() + ":" + order.getDirection() + ":"
 				+ order.getPrice() + ":" + order.getQuantity();
 //					message = "00001:003:L:B:8.1:500";
 //					message = "00001:003:L:B:8.2:400";
-		message = "00001:001:M:S:8.2:10000";
-		outToServer.writeUTF(message);
+//		message = "00001:001:M:S:8.2:10000";
+		outToServer.writeBytes(message + '\n');
 		DataInputStream inFromServer = new DataInputStream(client.getInputStream());
 		return inFromServer.readUTF();
 

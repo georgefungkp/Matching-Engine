@@ -22,6 +22,11 @@ dependencies {
     implementation 'org.apache.logging.log4j:log4j-core:2.14.1'
     // Log4j SLF4J Binding
     implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.14.1'
+    // QuickFIX/J Core
+    implementation 'org.quickfixj:quickfixj-core:2.3.2'
+    implementation 'org.quickfixj:quickfixj-all:2.3.0'
+    // Additional modules (e.g., FIX version-specific messages)
+//    implementation 'org.quickfixj:quickfixj-msg-fix44:2.3.2'
 }
 
 test {

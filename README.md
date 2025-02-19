@@ -20,3 +20,28 @@ List here the prerequisites and links to the installation procedure of each:
 - [Java SDK](https://www.oracle.com/java/technologies/downloads/)
 - An IDE of your choice (Although this project was developed using Intellij IDEA)
 
+### Message cycle of FIX in a trade
+First, the basic steps in a trade: order initiation, routing, execution, confirmation, and settlement. Each step corresponds to specific FIX messages. Let me list them in order.
+
+1. **Logon (A)**: The session starts with a Logon message to establish the connection. Both parties exchange this to authenticate.
+
+2. **New Order Single (D)**: The client sends a new order using the D message. It includes details like symbol, quantity, price, etc.
+
+3. **Execution Report (8)**: The broker responds with an Execution Report. Initially, this might be an acknowledgment (Pending New), then updates as the order is filled.
+
+4. **Order Cancel/Replace Request (G)**: If the client wants to modify the order, they send a G message.
+
+5. **Order Cancel Request (F)**: To cancel an order, an F message is sent.
+
+6. **Trade Capture Report (AE)**: Post-trade, this message confirms the details of the executed trade.
+
+7. **Allocation (AS)**: For multi-account trades, allocations are sent to distribute the executed quantity.
+
+8. **Confirmation (AK)**: Final confirmation of the trade details and settlement instructions.
+
+9. **Logout (5)**: Ends the session
+
+#### Example Workflow Summary:
+Logon(Logon (A)) → 2. New Order(New Order Single (D)) → 3. Order Ack(Execution Report (8) with ExecType=0)
+→ 4. Execution Report(Execution Report (8) with ExecType=F) → 5. Trade Capture Report(Trade Capture Report (AE))
+→ 6. Allocation(Allocation Instruction (AS)) → 7. Settlement(Settlement Instructions (T)) → 8. Logout(Logout (5))

@@ -19,6 +19,7 @@ import static util.ReadConfig.dotenv;
 public class ResultingTradeJob implements Runnable {
 	private static final Logger log = LogManager.getLogger(ResultingTradeJob.class);
 	private final LinkedBlockingQueue<Trade> resultingTradeQueue;
+	private boolean listening = true;
 
 	public ResultingTradeJob(LinkedBlockingQueue<Trade> resultingTradeQueue) {
 		this.resultingTradeQueue = resultingTradeQueue;
@@ -26,7 +27,7 @@ public class ResultingTradeJob implements Runnable {
 
 	@Override
 	public void run() {
-		while (true) {
+		while (listening) {
 			try {
 				Trade data = resultingTradeQueue.take();
 
@@ -34,7 +35,7 @@ public class ResultingTradeJob implements Runnable {
 						+ LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + ".csv");
 				FileChannel fileChannel = FileChannel.open(path, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
 				fileChannel.lock();
-				// Stock No, Buy Broker Id, Sell Broker Id, Executed Price, Executed Time
+				// Stock No, Buy Broker Id, Sell Broker Id, Executed Price, Qty, Executed Time
 				String message = String.format("%s,%s,%s,%s,%s,%s\r\n", data.getStockNo(), data.getBuyBrokerID(),
 						data.getSellBrokerID(), data.getExecutedPrice(), data.getExecutedQty(),
 						data.getExecutionDateTime());
@@ -46,6 +47,7 @@ public class ResultingTradeJob implements Runnable {
 			} catch (InterruptedException | IOException e) {
 				// TODO Auto-generated catch block
 				log.error(e);
+				listening = false;
 			}
 		}
 	}

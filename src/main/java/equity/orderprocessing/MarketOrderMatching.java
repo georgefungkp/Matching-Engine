@@ -1,15 +1,11 @@
 package equity.orderprocessing;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.PriorityQueue;
-import java.util.TreeMap;
-
 import equity.vo.Order;
 import equity.vo.Trade;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.*;
 
 public class MarketOrderMatching {
 
@@ -25,7 +21,7 @@ public class MarketOrderMatching {
 	}
 	
 	public static List<Trade> orderMatching(String stockNo, BigDecimal nominalPrice, TreeMap<BigDecimal, PriorityQueue<Order>> bidMap, TreeMap<BigDecimal, PriorityQueue<Order>> askMap) {
-		List<Trade> tradeList = new ArrayList<Trade>();
+		List<Trade> tradeList = new ArrayList<>();
 		if (!askMap.isEmpty() && !bidMap.isEmpty()) {
 			while (askMap.lastKey().compareTo(bidMap.lastKey()) <= 0) {
 				Map.Entry<BigDecimal, PriorityQueue<Order>> lastAskEntry = askMap.lastEntry();

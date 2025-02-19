@@ -1,6 +1,5 @@
 package equity.vo;
 
-import equity.externalparties.MarketDataJob;
 import equity.orderprocessing.LimitOrderMatching;
 import equity.orderprocessing.MarketOrderMatching;
 import org.apache.logging.log4j.LogManager;
@@ -17,7 +16,7 @@ import java.util.TreeMap;
  * Each stock has 2 order books
  */
 public class OrderBooksForStock {
-    private static final Logger log = LogManager.getLogger(MarketDataJob.class);
+    private static final Logger log = LogManager.getLogger(OrderBooksForStock.class);
     //	private BigDecimal bestBid;
 //	private BigDecimal bestAsk;
     // Bid order book
@@ -29,7 +28,7 @@ public class OrderBooksForStock {
     private BigDecimal nominalPrice;
 
     public OrderBooksForStock(String stockNo, BigDecimal nominalPrice, String desc) {
-        log.debug("Creating order books of " + desc);
+        log.debug("Creating order book of {}", desc);
         this.stockNo = stockNo;
         this.nominalPrice = nominalPrice;
         this.desc = desc;
@@ -141,7 +140,7 @@ public class OrderBooksForStock {
     }
 
     public void showMap(TreeMap<BigDecimal, PriorityQueue<Order>> orderMap, String buyOrSell) {
-        log.debug("{}_{} ", this.desc, buyOrSell);
+        log.debug("{} {} ", this.stockNo, buyOrSell);
         log.debug("the highest priority price: {}", orderMap.lastKey());
         log.debug("the lowest priority price: {}", orderMap.firstKey());
         for (Entry<BigDecimal, PriorityQueue<Order>> entry : orderMap.entrySet()) {

@@ -17,10 +17,10 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class OrderProcessingJob implements Runnable {
 	private static final Logger log = LogManager.getLogger(OrderProcessingJob.class);
-	private static int noOfStock = 10;
+	private static final int noOfStock = 10;
 	// First element is stock 1, 2nd element is stock 2, ....
 	List<OrderBooksForStock> listOfStocks = new ArrayList<>(noOfStock);
-	private LinkedBlockingQueue<OrderRequest> orderQueue;
+	private final LinkedBlockingQueue<OrderRequest> orderQueue;
 	private LinkedBlockingQueue<MarketData> marketDataQueue;
 	private LinkedBlockingQueue<Trade> resultingTradeQueue;
 
@@ -34,7 +34,7 @@ public class OrderProcessingJob implements Runnable {
 	private void createOrderBook() {
 		for (int i = 1; i <= noOfStock; i++) {
 			listOfStocks.add(
-					new OrderBooksForStock(String.format("%05d", i), new BigDecimal(1), "Stock " + i));
+					new OrderBooksForStock(String.format("%05d", i), new BigDecimal(0), "Stock " + i));
 		}
 	}
 

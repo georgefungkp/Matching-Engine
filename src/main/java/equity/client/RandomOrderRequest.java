@@ -4,27 +4,23 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Random;
 
-public class OrderRequest {
-	private static Random stockSeed = new Random();
+public class RandomOrderRequest {
+	private static final Random stockSeed = new Random();
 	private String brokerId;
-	private String stockNo;
-	private char direction;
-	private char orderType;
-	private BigDecimal price;
-	private int quantity;
+	private final String stockNo;
+	private final char direction;
+	private final char orderType;
+	private final BigDecimal price;
+	private final int quantity;
 
-	public OrderRequest() {
+	public RandomOrderRequest() {
 		this.stockNo = String.format("%05d", stockSeed.nextInt(3) + 1);
 		this.brokerId = String.format("%03d", stockSeed.nextInt(3) + 1);
 		this.direction = stockSeed.nextBoolean() ? 'B' : 'S';
 		this.orderType = stockSeed.nextBoolean() ? 'M' : 'L';
-		this.price = new BigDecimal(stockSeed.nextDouble() * 100).setScale(2, RoundingMode.HALF_UP);
+		this.price = BigDecimal.valueOf(stockSeed.nextDouble() * 100).setScale(2, RoundingMode.HALF_UP);
 		this.quantity = stockSeed.nextInt(1000);
 
-	}
-
-	public static Random getStockSeed() {
-		return stockSeed;
 	}
 
 	public String getStockNo() {

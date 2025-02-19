@@ -1,5 +1,7 @@
 package equity.externalparties;
 
+import equity.vo.MarketData;
+import equity.vo.Order;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -17,13 +19,12 @@ import java.util.Map.Entry;
 import java.util.PriorityQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import equity.vo.MarketData;
-import equity.vo.Order;
 import static util.ReadConfig.dotenv;
 
 public class MarketDataJob implements Runnable {
 	private static final Logger log = LogManager.getLogger(MarketDataJob.class);
 	private final LinkedBlockingQueue<MarketData> marketDataQueue;
+	private boolean listening = true;
 
 	public MarketDataJob(LinkedBlockingQueue<MarketData> marketDataQueue) {
 		this.marketDataQueue = marketDataQueue;
@@ -31,7 +32,7 @@ public class MarketDataJob implements Runnable {
 
 	@Override
 	public void run() {
-		while (true) {
+		while (listening) {
 			try {
 				MarketData data = marketDataQueue.take();
 
@@ -75,6 +76,7 @@ public class MarketDataJob implements Runnable {
 			} catch (InterruptedException | IOException e) {
 				// TODO Auto-generated catch block
 				log.error(e);
+				listening = false;
 			}
 		}
 	}
