@@ -3,8 +3,11 @@
 ## Developer Information
 
 **Name:** George Fung
+
 **Email:** georgefungkp@gmail.com
+
 **GitHub Username:** georgefungkp
+
 **LinkedIn Profile:** https://www.linkedin.com/in/george-fung
 
 ## Introduction
