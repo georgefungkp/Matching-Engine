@@ -20,7 +20,7 @@ This project implements a Matching Engine, a key component in trading platforms 
  - Supports **limit** as well as **market** orders
  - Real-time matching logic
  - Extensible and maintainable code
- - Supports internal message format or FIX message format
+ - Supports internal message format as well as FIX message format
 
 ## Getting Started
 
@@ -31,7 +31,7 @@ List here the prerequisites and links to the installation procedure of each:
 - [Java SDK](https://www.oracle.com/java/technologies/downloads/)
 - An IDE of your choice (Although this project was developed using Intellij IDEA)
 
-### Message cycle of FIX in a trade
+### Message cycle of FIX in a trade [The following is just for information. Not every message type is implemented in the project.]
 First, the basic steps in a trade: order initiation, routing, execution, confirmation, and settlement. Each step corresponds to specific FIX messages. Let me list them in order.
 
 1. **Logon (A)**: The session starts with a Logon message to establish the connection. Both parties exchange this to authenticate.
