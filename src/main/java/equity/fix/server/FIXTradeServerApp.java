@@ -29,7 +29,7 @@ public class FIXTradeServerApp extends MessageCracker implements Application, Ru
             LogFactory logFactory = new FileLogFactory(settings);
             MessageFactory messageFactory = new DefaultMessageFactory();
             // Start the FIX acceptor (server)
-            SocketAcceptor acceptor = null;
+            SocketAcceptor acceptor;
             acceptor = new SocketAcceptor(this, storeFactory, settings, logFactory, messageFactory);
             acceptor.start();
             // Keep the server running

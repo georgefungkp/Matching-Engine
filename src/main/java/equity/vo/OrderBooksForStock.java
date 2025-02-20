@@ -6,11 +6,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.math.BigDecimal;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.PriorityQueue;
-import java.util.TreeMap;
 
 /*
  * Each stock has 2 order books
@@ -140,7 +137,7 @@ public class OrderBooksForStock {
     }
 
     public void showMap(TreeMap<BigDecimal, PriorityQueue<Order>> orderMap, String buyOrSell) {
-        log.debug("{} {} ", this.stockNo, buyOrSell);
+        log.debug("{}-{} {}", this.stockNo, this.desc, buyOrSell);
         log.debug("the highest priority price: {}", orderMap.lastKey());
         log.debug("the lowest priority price: {}", orderMap.firstKey());
         for (Entry<BigDecimal, PriorityQueue<Order>> entry : orderMap.entrySet()) {
@@ -149,7 +146,7 @@ public class OrderBooksForStock {
                 System.out.print(order.getBrokerId() + "," + order.getQuantity() + ","
                         + order.getOrderSubmittedTime().toLocalDateTime() + " ");
             }
-            log.debug("The time of head is {}", entry.getValue().peek().getOrderSubmittedTime());
+            log.debug("The time of head is {}", Objects.requireNonNull(entry.getValue().peek()).getOrderSubmittedTime());
         }
 
     }
