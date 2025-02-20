@@ -1,5 +1,12 @@
 # Matching-Engine Project
 
+## Developer Information
+
+**Name:** George Fung
+**Email:** georgefungkp@gmail.com
+**GitHub Username:** georgefungkp
+**LinkedIn Profile:** https://www.linkedin.com/in/george-fung
+
 ## Introduction
 
 This project implements a Matching Engine, a key component in trading platforms and exchanges, responsible for handling buying and selling orders and matching them based on specific logic. The project is developed using Java SDK version 22 and helps understand the working of real-world trade execution.
@@ -7,9 +14,10 @@ This project implements a Matching Engine, a key component in trading platforms 
 ## Features
 
  - Efficient order handling and order book maintenance
- - Supports limit as well as market orders
+ - Supports **limit** as well as **market** orders
  - Real-time matching logic
  - Extensible and maintainable code
+ - Supports internal message format or FIX message format
 
 ## Getting Started
 
@@ -45,3 +53,4 @@ First, the basic steps in a trade: order initiation, routing, execution, confirm
 Logon(Logon (A)) → 2. New Order(New Order Single (D)) → 3. Order Ack(Execution Report (8) with ExecType=0)
 → 4. Execution Report(Execution Report (8) with ExecType=F) → 5. Trade Capture Report(Trade Capture Report (AE))
 → 6. Allocation(Allocation Instruction (AS)) → 7. Settlement(Settlement Instructions (T)) → 8. Logout(Logout (5))
+
