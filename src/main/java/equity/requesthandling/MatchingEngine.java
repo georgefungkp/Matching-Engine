@@ -28,30 +28,21 @@ public class MatchingEngine extends Thread {
     private static final Logger log = LogManager.getLogger(MatchingEngine.class);
     private static final String SUCCESS_MSG_TEMPLATE = " is processing your order. Good Luck!";
 
-
     private static final LinkedBlockingQueue<OrderRequest> orderQueue = new LinkedBlockingQueue<>();
-
     private static final LinkedBlockingQueue<MarketData> marketDataQueue = new LinkedBlockingQueue<>();
-
     private static final LinkedBlockingQueue<Trade> resultingTradeQueue = new LinkedBlockingQueue<>();
+    private FIXTradeServerApp fixTradeServerApp;
 
     private boolean listening = true;
 
     public MatchingEngine() throws ConfigError, InterruptedException {
         System.out.println(System.getProperty("java.class.path"));
-//        this.orderQueue = orderQueue;
-//        this.marketDataQueue = marketDataQueue;
-//        this.resultingTradeQueue = resultingTradeQueue;
-        new Thread(new FIXTradeServerApp(orderQueue)).start();
+        fixTradeServerApp = new FIXTradeServerApp(orderQueue);
+        new Thread(fixTradeServerApp).start();
         log.debug("Number of available threads in this machine: {}", noOfAvailableThreads);
     }
 
     public static void main(String[] args) throws ConfigError, InterruptedException {
-//        LinkedBlockingQueue<OrderRequest> orderQueue = new LinkedBlockingQueue<>();
-//        LinkedBlockingQueue<MarketData> marketDataQueue = new LinkedBlockingQueue<>();
-//        LinkedBlockingQueue<Trade> resultingTradeQueue = new LinkedBlockingQueue<>();
-
-//        MatchingEngine server = new MatchingEngine(orderQueue, marketDataQueue, resultingTradeQueue);
         MatchingEngine server = new MatchingEngine();
         server.startProcessingJobs();
         server.start();
@@ -60,7 +51,7 @@ public class MatchingEngine extends Thread {
     public void startProcessingJobs() {
         new Thread(new OrderProcessingJob(orderQueue, marketDataQueue, resultingTradeQueue)).start();
         new Thread(new MarketDataJob(marketDataQueue)).start();
-        new Thread(new ResultingTradeJob(resultingTradeQueue)).start();
+        new Thread(new ResultingTradeJob(resultingTradeQueue, this.fixTradeServerApp)).start();
     }
 
 
@@ -97,7 +88,7 @@ public class MatchingEngine extends Thread {
      */
     private OrderRequest createOrder(String value) {
         String[] tokens = value.split(":");
-        return new OrderRequest(tokens[0], tokens[1], tokens[2], tokens[3], new BigDecimal(tokens[4]),
+        return new OrderRequest(tokens[0], tokens[1], tokens[2], tokens[3], tokens[4], new BigDecimal(tokens[4]),
                 Integer.parseInt(tokens[5]));
     }
 

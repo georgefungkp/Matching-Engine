@@ -50,7 +50,8 @@ public class Client {
 	private static @NotNull String sendOrderToServer(Socket client, RandomOrderRequest order) throws IOException {
 		DataOutputStream outToServer = new DataOutputStream(client.getOutputStream());
 		//Stock No: Broker ID: Order Type: B/S: Price: Quantity
-		String message = order.getStockNo() + ":" + order.getBrokerId() + ":" + order.getOrderType() + ":" + order.getDirection() + ":"
+		String message = order.getStockNo() + ":" + order.getBrokerId() + ":" + order.getClientOrdId() + ":"
+				+ order.getOrderType() + ":" + order.getDirection() + ":"
 				+ order.getPrice() + ":" + order.getQuantity();
 //					message = "00001:003:L:B:8.1:500";
 //					message = "00001:003:L:B:8.2:400";

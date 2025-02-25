@@ -5,14 +5,19 @@ import java.math.BigDecimal;
 public class Trade {
 	String buyBrokerID;
 	String sellBrokerID;
+	String buyOrderID;
+	String sellOrderID;
 	String stockNo;
 	BigDecimal executedPrice;
 	int executedQty;
 	String executionDateTime;
 	
-	public Trade(String buyBrokerID, String sellBrokerID, String stockNo, BigDecimal executedPrice, int executedQty, String executionDateTime) {
+	public Trade(String buyBrokerID, String sellBrokerID, String buyOrderID, String sellOrderID,
+				 String stockNo, BigDecimal executedPrice, int executedQty, String executionDateTime) {
 		this.buyBrokerID = buyBrokerID;
 		this.sellBrokerID = sellBrokerID;
+		this.buyOrderID = buyOrderID;
+		this.sellOrderID = sellOrderID;
 		this.stockNo = stockNo;
 		this.executedPrice = executedPrice;
 		this.executedQty = executedQty;
@@ -23,9 +28,7 @@ public class Trade {
 	public String getSellBrokerID() {
 		return sellBrokerID;
 	}
-	public void setSellBrokerID(String sellBrokerID) {
-		this.sellBrokerID = sellBrokerID;
-	}
+
 	public String getStockNo() {
 		return stockNo;
 	}
@@ -41,14 +44,9 @@ public class Trade {
 	public int getQuantity() {
 		return executedQty;
 	}
-	public void setQuantity(int quantity) {
-		this.executedQty = quantity;
-	}
+
 	public String getExecutionDateTime() {
 		return executionDateTime;
-	}
-	public void setExecutionDateTime(String executionDateTime) {
-		this.executionDateTime = executionDateTime;
 	}
 
 
@@ -57,18 +55,8 @@ public class Trade {
 	}
 
 
-	public void setExecutedPrice(BigDecimal executedPrice) {
-		this.executedPrice = executedPrice;
-	}
-
-
 	public int getExecutedQty() {
 		return executedQty;
-	}
-
-
-	public void setExecutedQty(int executedQty) {
-		this.executedQty = executedQty;
 	}
 
 
@@ -76,10 +64,6 @@ public class Trade {
 		return buyBrokerID;
 	}
 
-
-	public void setBuyBrokerID(String buyBrokerID) {
-		this.buyBrokerID = buyBrokerID;
-	}
 
 	/**
 	 * Key for future use

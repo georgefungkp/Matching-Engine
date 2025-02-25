@@ -108,7 +108,7 @@ public class OrderBooksForStock {
                 }
             });
 
-            orderList.add(new Order(orderReq.brokerId(), orderReq.quantity()));
+            orderList.add(new Order(orderReq.brokerId(), orderReq.clientOrdID(), orderReq.quantity()));
 
             if ("M".equals(orderReq.orderType())) {
                 if ("B".equals(orderReq.buyOrSell())) {
@@ -121,7 +121,7 @@ public class OrderBooksForStock {
             }
         } else {
             PriorityQueue<Order> orderList = orderMap.get(orderReq.price());
-            orderList.add(new Order(orderReq.brokerId(), orderReq.quantity()));
+            orderList.add(new Order(orderReq.brokerId(), orderReq.clientOrdID(), orderReq.quantity()));
         }
         showMap(orderMap, orderReq.buyOrSell());
 

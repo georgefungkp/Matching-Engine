@@ -4,13 +4,15 @@ import java.sql.Timestamp;
 import java.time.Instant;
 
 public class Order {
-	private String brokerId;
+	private final String brokerId;
+	private final String clientOrderId;
 	private int quantity;
-	private Timestamp orderSubmittedTime;
+	private final Timestamp orderSubmittedTime;
 	
 	
-	public Order (String brokerId, int quantity) {
+	public Order (String brokerId, String brokerOrdId, int quantity) {
 		this.brokerId = brokerId;
+		this.clientOrderId = brokerOrdId;
 		this.quantity = quantity;
 		this.orderSubmittedTime = Timestamp.from(Instant.now());
 	}
@@ -24,10 +26,10 @@ public class Order {
 	public String getBrokerId() {
 		return brokerId;
 	}
-	public void setBrokerId(String brokerId) {
-		this.brokerId = brokerId;
+	public String getClientOrderId() {
+		return clientOrderId;
 	}
-	
+
 	public Timestamp getOrderSubmittedTime() {
 		return orderSubmittedTime;
 	}

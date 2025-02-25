@@ -26,7 +26,8 @@ public class LimitOrderMatching {
 						if (sellQty >= bidOrder.getQuantity()) {
 							// Fully fulfill bid order
 
-							tradeList.add(new Trade(bidOrder.getBrokerId(), askOrder.getBrokerId(), stockNo,
+							tradeList.add(new Trade(bidOrder.getBrokerId(), askOrder.getBrokerId(),
+									bidOrder.getClientOrderId(), askOrder.getClientOrderId(), stockNo,
 									lastAskEntry.getKey(), bidOrder.getQuantity(), LocalDateTime.now().toString()));
 							sellQty -= bidOrder.getQuantity();
 							bidQueue.remove();
@@ -45,7 +46,8 @@ public class LimitOrderMatching {
 							}
 						} else {
 							// Partial fulfill bid order
-							tradeList.add(new Trade(bidOrder.getBrokerId(), askOrder.getBrokerId(), stockNo,
+							tradeList.add(new Trade(bidOrder.getBrokerId(), askOrder.getBrokerId(),
+									bidOrder.getClientOrderId(), askOrder.getClientOrderId(), stockNo,
 									lastAskEntry.getKey(), sellQty, LocalDateTime.now().toString()));
 							bidOrder.setQuantity(bidOrder.getQuantity() - sellQty);
 							// Fully fulfill ask order

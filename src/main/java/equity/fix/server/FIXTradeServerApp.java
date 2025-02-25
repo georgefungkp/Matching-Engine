@@ -3,11 +3,13 @@ package equity.fix.server;
 import equity.vo.OrderRequest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import quickfix.*;
 import quickfix.field.*;
 import quickfix.fix44.ExecutionReport;
 import quickfix.fix44.MessageCracker;
 import quickfix.fix44.NewOrderSingle;
+import util.SequenceGenerator;
 
 import java.math.BigDecimal;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -20,17 +22,13 @@ import static quickfix.field.Side.BUY;
 public class FIXTradeServerApp extends MessageCracker implements Application, Runnable {
     private static final Logger log = LogManager.getLogger(FIXTradeServerApp.class);
     private final LinkedBlockingQueue<OrderRequest> orderQueue;
+    private final SequenceGenerator executionIDGenerator = new SequenceGenerator(); //thread-safe
+    private SessionID sessionID;
 
     public void run() {
         try {
-            // Load FIX settings from a configuration file0
-            SessionSettings settings = new SessionSettings("server_fix.cfg");
-            MessageStoreFactory storeFactory = new FileStoreFactory(settings);
-            LogFactory logFactory = new FileLogFactory(settings);
-            MessageFactory messageFactory = new DefaultMessageFactory();
-            // Start the FIX acceptor (server)
-            SocketAcceptor acceptor;
-            acceptor = new SocketAcceptor(this, storeFactory, settings, logFactory, messageFactory);
+            // Load FIX settings from a configuration file
+            final SocketAcceptor acceptor = getSocketAcceptor();
             acceptor.start();
             // Keep the server running
             log.debug("FIX server started. Press Ctrl+C to stop.");
@@ -40,6 +38,96 @@ public class FIXTradeServerApp extends MessageCracker implements Application, Ru
             acceptor.stop();
         } catch (ConfigError | InterruptedException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private @NotNull SocketAcceptor getSocketAcceptor() throws ConfigError {
+        SessionSettings settings = new SessionSettings("server_fix.cfg");
+        MessageStoreFactory storeFactory = new FileStoreFactory(settings);
+        LogFactory logFactory = new FileLogFactory(settings);
+        MessageFactory messageFactory = new DefaultMessageFactory();
+        // Start the FIX acceptor (server)
+        SocketAcceptor acceptor;
+        acceptor = new SocketAcceptor(this, storeFactory, settings, logFactory, messageFactory);
+        return acceptor;
+    }
+
+
+    @Override
+    public void onMessage(NewOrderSingle newOrder, SessionID sessionID) throws FieldNotFound {
+        // Handle New Order Single (D) message
+        log.debug("Received New Order Single (D)");
+
+        // Extract fields from the order
+        String clientOrdID = newOrder.getClOrdID().getValue();
+        String brokerID = newOrder.getClOrdID().getValue();
+        String stockNo = newOrder.getSymbol().getValue();
+        String direction = (newOrder.getSide().getValue() == BUY)? "B": "S";
+        String orderType = (newOrder.getOrdType().getValue() == MARKET)? "M": "L";
+        double quantity = newOrder.getOrderQty().getValue();
+        double price = newOrder.getPrice().getValue();
+
+
+        log.debug("Stock Code: {}", stockNo);
+        log.debug("Buy or Sell: {}", direction);
+        log.debug("Quantity: {}", quantity);
+        log.debug("Price: {}", price);
+
+        try {
+            // Send an Execution Report (8) to acknowledge the order
+            sendExecutionReport(sessionID, clientOrdID, newOrder, new ExecType(ExecType.NEW), new OrdStatus(OrdStatus.NEW));
+            orderQueue.put(new OrderRequest(stockNo, brokerID, clientOrdID, orderType, direction,
+                    BigDecimal.valueOf(price), (int)quantity));
+            log.debug("Put the {} order of {} to the order queue", direction, stockNo);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    public void sendExecutionReport(SessionID sessionID, String clientOrdID, String stockNo, Side side,
+                                    ExecType execType, OrdStatus ordStatus, int filledQty, BigDecimal execPrice){
+        ExecutionReport executionReport = new ExecutionReport(
+            new OrderID(clientOrdID), // Broker-assigned order ID
+            new ExecID(String.valueOf(executionIDGenerator.getNextSequence())),  // Execution ID
+            execType, // Execution type
+            ordStatus, // Order status
+            side,
+            new LeavesQty(0), // No remaining quantity
+            new CumQty(filledQty), // Cumulative quantity filled
+            new AvgPx(execPrice.doubleValue()) // Average price
+        );
+        executionReport.set(new Symbol(stockNo)); // replace with your symbol
+        try {
+            Session.sendToTarget(executionReport, sessionID);
+            log.debug("Sent Execution Report (8)");
+        } catch (SessionNotFound e) {
+            log.error("Session not found: " + e.getMessage());
+        }
+    }
+
+    public void sendExecutionReport(SessionID sessionID, String clientOrdID, NewOrderSingle newOrder,
+                                    ExecType execType, OrdStatus ordStatus) throws FieldNotFound {
+        // Create an Execution Report (8) message
+        ExecutionReport executionReport = new ExecutionReport(
+            new OrderID(clientOrdID), // Broker-assigned order ID
+            new ExecID(String.valueOf(executionIDGenerator.getNextSequence())),  // Execution ID
+            execType, // Execution type
+            ordStatus, // Order status
+            new Side(newOrder.getSide().getValue()),
+            new LeavesQty(newOrder.getOrderQty().getValue()), // No remaining quantity
+            new CumQty(0), // Cumulative quantity filled
+            new AvgPx(newOrder.getPrice().getValue()) // Average price
+        );
+        executionReport.set(new ClOrdID(clientOrdID));
+        executionReport.set(new Symbol(newOrder.getSymbol().toString()));
+
+        // Send the Execution Report
+        try {
+            Session.sendToTarget(executionReport, sessionID);
+            log.debug("Sent Execution Report (8)");
+        } catch (SessionNotFound e) {
+            log.error("Session not found: " + e.getMessage());
         }
     }
 
@@ -54,6 +142,7 @@ public class FIXTradeServerApp extends MessageCracker implements Application, Ru
 
     @Override
     public void onLogon(SessionID sessionID) {
+        this.sessionID = sessionID;
         log.debug("Logged on: " + sessionID);
     }
 
@@ -83,65 +172,11 @@ public class FIXTradeServerApp extends MessageCracker implements Application, Ru
         crack(message, sessionID); // Route the message to the appropriate handler
     }
 
-    @Override
-    public void onMessage(NewOrderSingle newOrder, SessionID sessionID) throws FieldNotFound {
-        // Handle New Order Single (D) message
-        log.debug("Received New Order Single (D)");
-
-        // Extract fields from the order
-//        String cliendOrderID = newOrder.getClOrdID().getValue();
-        String brokerID = newOrder.getClOrdID().getValue();
-        String stockNo = newOrder.getSymbol().getValue();
-        String direction = (newOrder.getSide().getValue() == BUY)? "B": "S";
-        String orderType = (newOrder.getOrdType().getValue() == MARKET)? "M": "L";
-        double quantity = newOrder.getOrderQty().getValue();
-        double price = newOrder.getPrice().getValue();
-
-
-        log.debug("Stock Code: {}", stockNo);
-        log.debug("Buy or Sell: {}", direction);
-        log.debug("Quantity: {}", quantity);
-        log.debug("Price: {}", price);
-
-        try {
-            orderQueue.put(new OrderRequest(stockNo, brokerID, orderType, direction,
-                    BigDecimal.valueOf(price), (int)quantity));
-            log.debug("Put the {} order of {} to the order queue", direction, stockNo);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-
-        // Send an Execution Report (8) to acknowledge the order
-//        sendExecutionReport(sessionID, clOrdID, symbol, side, orderQty, price);
+    public SessionID getSessionID() {
+        return sessionID;
     }
 
-    public void sendExecutionReport(SessionID sessionID, String clOrdID, String symbol, char side, double orderQty, double price) {
-        // Create an Execution Report (8) message
-        ExecutionReport executionReport = new ExecutionReport(
-            new OrderID("BRK12345"), // Broker-assigned order ID
-            new ExecID("EXEC9876"),  // Execution ID
-            new ExecType(ExecType.FILL), // Execution type
-            new OrdStatus(OrdStatus.FILLED), // Order status
-            new Side(side),
-            new LeavesQty(0), // No remaining quantity
-            new CumQty(orderQty), // Cumulative quantity filled
-            new AvgPx(price) // Average price
-        );
-        executionReport.set(new ClOrdID(clOrdID));
-        executionReport.set(new Symbol(symbol));
-        executionReport.set(new LastQty(orderQty));
-        executionReport.set(new LastPx(price));
-
-        // Send the Execution Report
-        try {
-            Session.sendToTarget(executionReport, sessionID);
-            log.debug("Sent Execution Report (8)");
-        } catch (SessionNotFound e) {
-            log.error("Session not found: " + e.getMessage());
-        }
-    }
-
-    public static void main(String[] args) throws ConfigError, InterruptedException {
-
-    }
+//    public static void main(String[] args) throws ConfigError, InterruptedException {
+//
+//    }
 }
