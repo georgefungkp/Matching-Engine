@@ -14,8 +14,7 @@ import java.util.Map.Entry;
  */
 public class OrderBooksForStock {
     private static final Logger log = LogManager.getLogger(OrderBooksForStock.class);
-    //	private BigDecimal bestBid;
-//	private BigDecimal bestAsk;
+    // Each price has its own list of brokers
     // Bid order book
     TreeMap<BigDecimal, PriorityQueue<Order>> bidMap;
     // Ask order book
