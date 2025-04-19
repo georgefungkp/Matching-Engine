@@ -36,7 +36,8 @@ List here the prerequisites and links to the installation procedure of each:
 ![Why TreeMap?](https://github.com/georgefungkp/Matching-Engine/blob/main/PQvsTreeMap.jpg)
 
 
-## Message cycle of FIX in a trade [The following is just for information. Not every message type is implemented in the project.]
+## Message cycle of FIX in a trade 
+[The following is just for information. Not every message type is implemented in the project.]
 First, the basic steps in a trade: order initiation, routing, execution, confirmation, and settlement. Each step corresponds to specific FIX messages. Let me list them in order.
 
 1. **Logon (A)**: The session starts with a Logon message to establish the connection. Both parties exchange this to authenticate.
