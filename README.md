@@ -33,7 +33,7 @@ List here the prerequisites and links to the installation procedure of each:
 
 ### Design consideration
 1. The data structure of order book is <b> Tree map </b> with <b> Array </b>. So, the time complexity of a new limit price is O(log n), and first or last key is O(1) as Java always caches the leftmost/rightmost nodes. For cancellation, it's also O(log n). On average, Tree map is the best choice in JDK implementation.
-![Why TreeMap?](https://github.com/georgefungkp/Matching-Engine/blob/main/PVvsTreeMap.jpg)
+![Why TreeMap?](https://github.com/georgefungkp/Matching-Engine/blob/main/PQvsTreeMap.jpg)
 
 
 ### Message cycle of FIX in a trade [The following is just for information. Not every message type is implemented in the project.]
