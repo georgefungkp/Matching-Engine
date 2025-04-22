@@ -4,7 +4,6 @@ import equity.vo.Order;
 import equity.vo.Trade;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.*;
 
 public class MarketOrderMatching {
@@ -35,9 +34,9 @@ public class MarketOrderMatching {
 						Order bidOrder = bidQueue.peek();
 						if (sellQty >= bidOrder.getQuantity()) {
 							// Fully fulfill bid order
-							tradeList.add(new Trade(bidOrder.getBrokerId(), askOrder.getBrokerId(), bidOrder.getClientOrderId(),
-									askOrder.getClientOrderId(), stockNo,
-									getPrice(lastAskEntry, lastBidEntry, nominalPrice), bidOrder.getQuantity(), LocalDateTime.now().toString()));
+//							tradeList.add(new Trade(bidOrder.getBrokerId(), askOrder.getBrokerId(), bidOrder.getClientOrdID(),
+//									askOrder.getClientOrdID(), stockNo,
+//									getPrice(lastAskEntry, lastBidEntry, nominalPrice), bidOrder.getQuantity(), LocalDateTime.now().toString()));
 							sellQty -= bidOrder.getQuantity();
 							bidQueue.remove();
 							if (sellQty == 0) {
@@ -55,9 +54,9 @@ public class MarketOrderMatching {
 							}
 						} else {
 							// Partial fulfill bid order
-							tradeList.add(new Trade(bidOrder.getBrokerId(), askOrder.getBrokerId(),
-									bidOrder.getClientOrderId(), askOrder.getClientOrderId(), stockNo,
-									getPrice(lastAskEntry, lastBidEntry, nominalPrice), sellQty, LocalDateTime.now().toString()));
+//							tradeList.add(new Trade(bidOrder.getBrokerId(), askOrder.getBrokerId(),
+//									bidOrder.getClientOrderId(), askOrder.getClientOrderId(), stockNo,
+//									getPrice(lastAskEntry, lastBidEntry, nominalPrice), sellQty, LocalDateTime.now().toString()));
 							bidOrder.setQuantity(bidOrder.getQuantity() - sellQty);
 							// Fully fulfill ask order
 							sellQty = 0;

@@ -6,7 +6,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
@@ -15,8 +14,8 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.LinkedList;
 import java.util.Map.Entry;
-import java.util.PriorityQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static util.ReadConfig.dotenv;
@@ -43,28 +42,28 @@ public class MarketDataJob implements Runnable {
 				fileChannel.lock();
 				String bestBidTxt = (data.bestBid() == null) ? "" : data.bestBid().toString();
 				String bestAskTxt = (data.bestAsk() == null) ? "" : data.bestAsk().toString();
-				String nominalPriceTxt = (data.nominalPrice() == null)? "": data.nominalPrice().toString();
+				String lastTradePrice = (data.lastTradePrice() == null)? "": data.lastTradePrice().toString();
 
 				StringBuilder message = new StringBuilder("Stock Name:" + data.stockNo() + "\n" + "Best Bid Price:" + bestBidTxt + "\n"
-                        + "Best Ask Price:" + bestAskTxt + "\n" + "Nominal Price:" + nominalPriceTxt + "\n");
+                        + "Best Ask Price:" + bestAskTxt + "\n" + "Last Trade Price:" + lastTradePrice + "\n");
 				message.append("Bid orders\n");
-				for (Entry<BigDecimal, PriorityQueue<Order>> entry : data.bidMap().entrySet()) {
-					String priceTxt = ""; 
-					if (entry.getKey().equals(BigDecimal.valueOf(Integer.MAX_VALUE))){
-						priceTxt = "M";
-					}
-					message.append(priceTxt).append("\n");
+				for (Entry<Double, LinkedList<Order>> entry : data.bidMap().entrySet()) {
+//					String priceTxt = "";
+//					if (entry.getKey().equals(BigDecimal.valueOf(Integer.MAX_VALUE))){
+//						priceTxt = "M";
+//					}
+//					message.append(priceTxt).append("\n");
 					for (Order order : entry.getValue()) {
 						message.append(order.getBrokerId()).append(" ").append(order.getQuantity()).append("\n");
 					}
 				}
 				message.append("Ask orders\n");
-				for (Entry<BigDecimal, PriorityQueue<Order>> entry : data.askMap().entrySet()) {
-					String priceTxt = ""; 
-					if (entry.getKey().equals(BigDecimal.valueOf(0))){
-						priceTxt = "M";
-					}
-					message.append(priceTxt).append("\n");
+				for (Entry<Double, LinkedList<Order>> entry : data.askMap().entrySet()) {
+//					String priceTxt = "";
+//					if (entry.getKey().equals(BigDecimal.valueOf(0))){
+//						priceTxt = "M";
+//					}
+//					message.append(priceTxt).append("\n");
 					for (Order order : entry.getValue()) {
 						message.append(order.getBrokerId()).append(" ").append(order.getQuantity()).append("\n");
 					}

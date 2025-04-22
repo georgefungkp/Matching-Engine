@@ -1,43 +1,56 @@
 package equity.vo;
-
-import java.sql.Timestamp;
-import java.time.Instant;
+import java.time.ZonedDateTime;
 
 public class Order {
-	private final String brokerId;
-	private final String clientOrderId;
-	private int quantity;
-	private final Timestamp orderSubmittedTime;
-	
-	
-	public Order (String brokerId, String brokerOrdId, int quantity) {
-		this.brokerId = brokerId;
-		this.clientOrderId = brokerOrdId;
-		this.quantity = quantity;
-		this.orderSubmittedTime = Timestamp.from(Instant.now());
-	}
+    private String stockNo;
+    private String brokerId;
+    private String clientOrdID;
+    private String orderType;
+    private String buyOrSell;
+    private Double price;
+    private int quantity;
+    private ZonedDateTime createdDateTime;
+    private ZonedDateTime lastEventDateTime;
 
-	public int getQuantity() {
-		return quantity;
-	}
-	public void setQuantity(int quantity) {
-		this.quantity = quantity;
-	}
-	public String getBrokerId() {
-		return brokerId;
-	}
-	public String getClientOrderId() {
-		return clientOrderId;
-	}
+    public Order(String stockNo, String brokerId, String clientOrdID, String orderType,
+                 String buyOrSell, Double price, int quantity, ZonedDateTime createdDateTime, ZonedDateTime lastEventDateTime){
+        this.stockNo = stockNo;
+        this.brokerId = brokerId;
+        this.clientOrdID = clientOrdID;
+        this.orderType = orderType;
+        this.buyOrSell = buyOrSell;
+        this.price = price;
+        this.quantity = quantity;
+        this.createdDateTime = createdDateTime;
+        this.lastEventDateTime = lastEventDateTime;
+    }
 
-	public Timestamp getOrderSubmittedTime() {
-		return orderSubmittedTime;
-	}
+    // getters
+    public String getStockNo() { return stockNo; }
 
-	/**
-	 * Key for future use
-	 */
-	public String toString() {
-		return (this.brokerId + this.quantity + this.orderSubmittedTime);
-	}
+    public String getBrokerId() { return brokerId; }
+
+    public String getClientOrdID() { return clientOrdID; }
+
+    public String getOrderType() { return orderType; }
+
+    public String getBuyOrSell() { return buyOrSell; }
+
+    public Double getPrice() { return price; }
+
+    public int getQuantity() { return quantity; }
+
+    public ZonedDateTime getCreatedDateTime() { return createdDateTime; }
+
+    // setters
+    public void setStockNo(String stockNo) { this.stockNo = stockNo; }
+
+    public void setBrokerId(String brokerId) { this.brokerId = brokerId; }
+
+    public void setPrice(Double price) { this.price = price; }
+
+    public void setQuantity(int quantity) { this.quantity = quantity; }
+
+    public void setLastEventDateTime(ZonedDateTime lastEventDateTime) { this.lastEventDateTime = lastEventDateTime; }
+
 }

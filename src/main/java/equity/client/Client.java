@@ -1,5 +1,6 @@
 package equity.client;
 
+import equity.vo.Order;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -12,8 +13,12 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
 import static util.ReadConfig.dotenv;
 
+/**
+ * Client class to demonstrate connecting to a server, sending order requests, and receiving responses.
+ */
 public class Client {
 
 	private static final Logger log = LogManager.getLogger(Client.class);
@@ -23,10 +28,9 @@ public class Client {
 		for (int i = 0; i < 1; i++) {
 			executor.execute(() -> {
 				try {
-					RandomOrderRequest order = new RandomOrderRequest();
 					Socket client = new Socket(dotenv.get("server"), Integer.parseInt(Objects.requireNonNull(dotenv.get("port_number"))));
                     log.debug("Thread {} connected to {} on port {}", Thread.currentThread().getName(), dotenv.get("server"), dotenv.get("port_number"));
-					final String response = sendOrderToServer(client, order);
+					final String response = sendOrderToServer(client, RandomOrderRequestGenerator.getNewLimitOrder());
 
 					log.debug(response);
 //					Thread.sleep(1000);
@@ -47,11 +51,11 @@ public class Client {
 
 	}
 
-	private static @NotNull String sendOrderToServer(Socket client, RandomOrderRequest order) throws IOException {
+	private static @NotNull String sendOrderToServer(Socket client, Order order) throws IOException {
 		DataOutputStream outToServer = new DataOutputStream(client.getOutputStream());
 		//Stock No: Broker ID: Order Type: B/S: Price: Quantity
-		String message = order.getStockNo() + ":" + order.getBrokerId() + ":" + order.getClientOrdId() + ":"
-				+ order.getOrderType() + ":" + order.getDirection() + ":"
+		String message = order.getStockNo() + ":" + order.getBrokerId() + ":" + order.getClientOrdID() + ":"
+				+ order.getOrderType() + ":" + order.getBuyOrSell() + ":"
 				+ order.getPrice() + ":" + order.getQuantity();
 //					message = "00001:003:L:B:8.1:500";
 //					message = "00001:003:L:B:8.2:400";

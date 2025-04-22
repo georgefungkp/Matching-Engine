@@ -37,14 +37,14 @@ public class ResultingTradeJob implements Runnable {
 			try {
 				Trade data = resultingTradeQueue.take();
 
-				Path path = Paths.get(dotenv.get("tradeData") + data.getStockNo() + "_"
+				Path path = Paths.get(dotenv.get("tradeData") + data.stockNo() + "_"
 						+ LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + ".csv");
 				FileChannel fileChannel = FileChannel.open(path, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
 				fileChannel.lock();
 				// Stock No, Buy Broker Id, Sell Broker Id, Executed Price, Qty, Executed Time
-				String message = String.format("%s,%s,%s,%s,%s,%s\r\n", data.getStockNo(), data.getBuyBrokerID(),
-						data.getSellBrokerID(), data.getExecutedPrice(), data.getExecutedQty(),
-						data.getExecutionDateTime());
+				String message = String.format("%s,%s,%s,%s,%s,%s\r\n", data.stockNo(), data.buyBrokerID(),
+						data.sellBrokerID(), data.executedPrice(), data.executedQty(),
+						data.executionDateTime());
 //				log.debug("Appending " + message + " into trade_data_" + data.getStockNo() + "_"
 //						+ LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + ".txt");
 				fileChannel.write(ByteBuffer.wrap(message.getBytes()));
@@ -53,13 +53,13 @@ public class ResultingTradeJob implements Runnable {
 				// Send FIX message if applicable
 				if (fixTradeServer.getSessionID() != null){
  					fixTradeServer.sendExecutionReport(fixTradeServer.getSessionID(),
-							data.getBuyBrokerID(), data.getStockNo(), new Side(Side.BUY),
+							data.buyBrokerID(), data.stockNo(), new Side(Side.BUY),
 							new ExecType(ExecType.TRADE), new OrdStatus(OrdStatus.FILLED),
-							data.getExecutedQty(), data.getExecutedPrice());
+							data.executedQty(), data.executedPrice());
  					fixTradeServer.sendExecutionReport(fixTradeServer.getSessionID(),
-							data.getSellBrokerID(), data.getStockNo(), new Side(Side.SELL),
+							data.sellBrokerID(), data.stockNo(), new Side(Side.SELL),
 							new ExecType(ExecType.TRADE), new OrdStatus(OrdStatus.FILLED),
-							data.getExecutedQty(), data.getExecutedPrice());
+							data.executedQty(), data.executedPrice());
 				}
 
 			} catch (InterruptedException | IOException e) {

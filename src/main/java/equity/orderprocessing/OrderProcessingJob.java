@@ -1,76 +1,97 @@
 package equity.orderprocessing;
 
-import equity.vo.MarketData;
-import equity.vo.OrderBooksForStock;
-import equity.vo.OrderRequest;
-import equity.vo.Trade;
+import equity.vo.Order;
+import equity.vo.OrderBook;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.math.BigDecimal;
-import java.sql.Timestamp;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 
 public class OrderProcessingJob implements Runnable {
-	private static final Logger log = LogManager.getLogger(OrderProcessingJob.class);
-	private static final int noOfStock = 10;
-	// First element is stock 1, 2nd element is stock 2, ....
-	List<OrderBooksForStock> listOfStocks = new ArrayList<>(noOfStock);
-	private final LinkedBlockingQueue<OrderRequest> orderQueue;
-	private LinkedBlockingQueue<MarketData> marketDataQueue;
-	private LinkedBlockingQueue<Trade> resultingTradeQueue;
+    private static final Logger log = LogManager.getLogger(OrderProcessingJob.class);
+    private final LinkedBlockingQueue<Order> orderQueue;
+    private final HashMap<String, OrderBook> orderBooks;
+    private final ConcurrentHashMap<String, Order> orderObjMapper;
+    private final boolean LOG_ENABLED = true;
+    private boolean isInterrupted = false;
 
-	public OrderProcessingJob(LinkedBlockingQueue<OrderRequest> orderQueue,
-			LinkedBlockingQueue<MarketData> marketDataQueue, LinkedBlockingQueue<Trade> resultingTradeQueue) {
-		this.orderQueue = orderQueue;
-		this.marketDataQueue = marketDataQueue;
-		this.resultingTradeQueue = resultingTradeQueue;
-	}
+    /**
+     * Constructs an OrderProcessingJob with the given parameters.
+     *
+     * @param orderQueue the queue holding incoming orders to be processed
+     * @param orderBooks a map of order books for different stock numbers
+     * @param orderObjMapper a mapping of order objects identified by broker ID and client order ID
+     */
+    public OrderProcessingJob(LinkedBlockingQueue<Order> orderQueue, HashMap<String, OrderBook> orderBooks, ConcurrentHashMap<String, Order> orderObjMapper) {
+        this.orderQueue = orderQueue;
+        this.orderBooks = orderBooks;
+        this.orderObjMapper = orderObjMapper;
+    }
 
-	private void createOrderBook() {
-		for (int i = 1; i <= noOfStock; i++) {
-			listOfStocks.add(
-					new OrderBooksForStock(String.format("%05d", i), new BigDecimal(0), "Stock " + i));
-		}
-	}
 
-	@Override
-	public void run() {
-		createOrderBook();
-		while (true) {
-			log.debug("Getting order from Queue");
-			try {
-				OrderRequest orderReq = orderQueue.take();
-				if (listOfStocks.size() < Integer.parseInt(orderReq.stockNo())) {
-					log.debug("Stock no is incorrect. Order is ignored");
-				} else {
-					OrderBooksForStock stock = listOfStocks.get(Integer.parseInt(orderReq.stockNo()) - 1);
-					List<Trade> tradeList = stock.addBid(orderReq);
+    /**
+     * Puts the given order into the corresponding order book based on the order type and buy/sell direction.
+     *
+     * @param order the order to be placed into the order book
+     */
+    public void putOrder(Order order) {
+        TreeMap<Double, LinkedList<Order>> orderMap;
+        ReentrantReadWriteLock readWriteLock;
+        OrderBook orderBook = orderBooks.get(order.getStockNo());
+        if (orderBook == null) {
+            log.debug("System can't find order book of {}", order.getStockNo());
+            return;
+        }
+        if ("B".equals(order.getBuyOrSell())) {
+            orderMap = orderBook.getBidMap();
+            readWriteLock = orderBook.getBidLock();
+        } else {
+            orderMap = orderBook.getAskMap();
+            readWriteLock = orderBook.getAskLock();
+        }
 
-					Optional<BigDecimal> nominalAmt = Optional.empty();
-					for (Trade trade : tradeList) {
-						if (nominalAmt.isEmpty() || nominalAmt.get().compareTo(trade.getPrice()) < 0) {
-							nominalAmt = Optional.of(trade.getPrice());
-						}
-					}
-                    nominalAmt.ifPresent(stock::setNominalPrice);
-					marketDataQueue.put(new MarketData(stock.getStockNo(), stock.getBestBid(), stock.getBestAsk(),
-							stock.getNominalPrice(), Timestamp.from(Instant.now()), stock.getBidMap(), stock.getAskMap()));
-					if (!tradeList.isEmpty()) {
-						for (Trade trade : tradeList) {
-							resultingTradeQueue.put(trade);
-						}
-					}
-				}
-			} catch (InterruptedException e) {
-				log.error(e);
-			}
-		}
+        // Put order to order book if it's limited order
+        if ("L".equals(order.getOrderType())) {
+            readWriteLock.writeLock().lock();
+            if (orderMap.containsKey(order.getPrice())) {
+                LinkedList<Order> orderList = orderMap.get(order.getPrice());
+                orderList.add(order);
+            } else {
+                LinkedList<Order> orderList = new LinkedList<>();
+                orderList.add(order);
+                orderMap.put(order.getPrice(), orderList);
+            }
+            orderObjMapper.put(order.getBrokerId() + order.getClientOrdID(), order);
+            readWriteLock.writeLock().unlock();
+        }
 
-	}
+        if (LOG_ENABLED)
+            orderBook.showMap();
 
+    }
+
+
+    @Override
+    public void run() {
+        while (!isInterrupted) {
+            log.debug("Getting order from Queue");
+            try {
+                Order order = orderQueue.take();
+                if (!orderBooks.containsKey(order.getStockNo())) {
+                    log.debug("Stock no is incorrect. Order is ignored");
+                    continue;
+                }
+                this.putOrder(order);
+            } catch (InterruptedException e) {
+                log.debug("{} is going down.", this.getClass().getSimpleName());
+                isInterrupted = true;
+            }
+        }
+    }
 }

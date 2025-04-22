@@ -1,76 +1,68 @@
 package com.baml.equity.orderprocessing;
 
-import equity.orderprocessing.LimitOrderMatching;
+import equity.client.RandomOrderRequestGenerator;
+import equity.orderprocessing.LimitOrderMatchingJob;
 import equity.vo.Order;
 import equity.vo.Trade;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
-import java.util.Comparator;
-import java.util.List;
-import java.util.PriorityQueue;
-import java.util.TreeMap;
+import java.time.ZonedDateTime;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class TestLimitOrderMatching{
-	protected TreeMap<BigDecimal, PriorityQueue<Order>> bidMap;
-	protected TreeMap<BigDecimal, PriorityQueue<Order>> askMap;
-	Comparator<Order> orderCmp;
+	// Bid order book
+	protected TreeMap<Double, LinkedList<Order>> bidMap = new TreeMap<>();
+    // Ask order book
+	protected TreeMap<Double, LinkedList<Order>> askMap = new TreeMap<>(Comparator.reverseOrder());
 
 
     @BeforeEach
 	protected void setUp() {
-		orderCmp = new Comparator<>() {
-            /**
-             * Earlier order has higher priority
-             */
-            @Override
-            public int compare(Order o1, Order o2) {
-                return (o1.getOrderSubmittedTime().compareTo(o2.getOrderSubmittedTime()));
-            }
-        };
-		bidMap = new TreeMap<>(new Comparator<>() {
-            /**
-             * Lower bid price has higher priority
-             */
-            @Override
-            public int compare(BigDecimal o1, BigDecimal o2) {
-                return o1.compareTo(o2);
-            }
-        });
-		askMap = new TreeMap<>(new Comparator<>() {
-            /**
-             * Higher ask price has higher priority
-             */
-            @Override
-            public int compare(BigDecimal o1, BigDecimal o2) {
-                return o2.compareTo(o1);
-            }
-        });
+		Order bidOrder1 = RandomOrderRequestGenerator.getNewOrder();
+		bidOrder1.setBrokerId("Broker 1");
+		bidOrder1.setStockNo("001");
+		bidOrder1.setPrice(8.1);
+		bidOrder1.setQuantity(300);
 
-		Order bidOrder1 = new Order("Broker_1", "001", 300);
-		PriorityQueue<Order> orderList = new PriorityQueue<>(orderCmp);
-		orderList.add(bidOrder1);
-		bidMap.put(BigDecimal.valueOf(8.1), orderList);
-		Order askOrder1 = new Order("Broker_2", "002", 400);
-		Order askOrder2 = new Order("Broker_2", "003", 300);
-		Order askOrder3 = new Order("Broker_2", "004", 100);
+		LinkedList<Order> orderList1 = new LinkedList<>();
+		orderList1.add(bidOrder1);
+		bidMap.put(bidOrder1.getPrice(), orderList1);
 
-		orderList = new PriorityQueue<>(orderCmp);
-		orderList.add(askOrder1);
-		orderList.add(askOrder2);
-		askMap.put(BigDecimal.valueOf(8.5), orderList);
-		orderList = new PriorityQueue<>(orderCmp);
-		orderList.add(askOrder3);
-		askMap.put(BigDecimal.valueOf(8.2), orderList);
+		Order askOrder1 = RandomOrderRequestGenerator.getNewOrder();
+		askOrder1.setBrokerId("Broker 2");
+		askOrder1.setStockNo("001");
+		askOrder1.setPrice(8.2);
+		askOrder1.setQuantity(100);
+
+		Order askOrder2 = RandomOrderRequestGenerator.getNewOrder();
+		askOrder2.setBrokerId("Broker 2");
+		askOrder2.setStockNo("001");
+		askOrder2.setPrice(8.5);
+		askOrder2.setQuantity(300);
+
+		Order askOrder3 = RandomOrderRequestGenerator.getNewOrder();
+		askOrder3.setBrokerId("Broker 2");
+		askOrder3.setStockNo("001");
+		askOrder3.setPrice(8.5);
+		askOrder3.setQuantity(400);
+
+		LinkedList<Order> orderList2 = new LinkedList<>();
+		orderList2.add(askOrder1);
+		askMap.put(askOrder1.getPrice(), orderList2);
+		LinkedList<Order> orderList3 = new LinkedList<>();
+		orderList3.add(askOrder2);
+		orderList3.add(askOrder3);
+		askMap.put(askOrder2.getPrice(), orderList3);
 
 	}
 
     @Test
 	public void testNoNewBid() {
-		List<Trade> trades = LimitOrderMatching.orderMatching("00001", bidMap, askMap);
+		List<Trade> trades = LimitOrderMatchingJob.orderMatching("00001", bidMap, askMap);
 		assertNotNull(trades);
 		assertEquals(0, trades.size());
 	}
@@ -82,7 +74,7 @@ public class TestLimitOrderMatching{
 		Order bidOrder2 = new Order("Broker_1", "005", 200);
 		orderList.add(bidOrder2);
 		bidMap.put(BigDecimal.valueOf(8.5), orderList);
-		List<Trade> trades = LimitOrderMatching.orderMatching("00001", bidMap, askMap);
+		List<Trade> trades = LimitOrderMatchingJob.orderMatching("00001", bidMap, askMap);
 		assertEquals(2, trades.size());
 		Trade trade1 = trades.getFirst();
 		assertEquals("00001", trade1.getStockNo());
@@ -104,7 +96,7 @@ public class TestLimitOrderMatching{
     @Test
 	public void testBidBookEmpty() {
 		bidMap.clear();
-		List<Trade> trades = LimitOrderMatching.orderMatching("00001", bidMap, askMap);
+		List<Trade> trades = LimitOrderMatchingJob.orderMatching("00001", bidMap, askMap);
 		assertNotNull(trades);
 		assertEquals(0, trades.size());		
 	}
@@ -112,7 +104,7 @@ public class TestLimitOrderMatching{
     @Test
 	public void testAskBookEmpty() {
 		askMap.clear();
-		List<Trade> trades = LimitOrderMatching.orderMatching("00001", bidMap, askMap);
+		List<Trade> trades = LimitOrderMatchingJob.orderMatching("00001", bidMap, askMap);
 		assertNotNull(trades);
 		assertEquals(0, trades.size());				
 	}
@@ -123,7 +115,7 @@ public class TestLimitOrderMatching{
 		Order bidOrder = new Order("Broker_1", "005", 20000);
 		orderList.add(bidOrder);
 		bidMap.put(BigDecimal.valueOf(10), orderList);
-		List<Trade> trades = LimitOrderMatching.orderMatching("00001", bidMap, askMap);
+		List<Trade> trades = LimitOrderMatchingJob.orderMatching("00001", bidMap, askMap);
 		assertEquals(3, trades.size());	
 		assertTrue(askMap.isEmpty());
 		
@@ -135,7 +127,7 @@ public class TestLimitOrderMatching{
 		Order askOrder = new Order("Broker_1", "005", 20000);
 		orderList.add(askOrder);
 		askMap.put(BigDecimal.valueOf(7), orderList);
-		List<Trade> trades = LimitOrderMatching.orderMatching("00001", bidMap, askMap);
+		List<Trade> trades = LimitOrderMatchingJob.orderMatching("00001", bidMap, askMap);
 		assertEquals(1, trades.size());	
 		assertTrue(bidMap.isEmpty());
 		
@@ -147,7 +139,7 @@ public class TestLimitOrderMatching{
 		Order bidOrder = new Order("Broker_1", "005", 100);
 		orderList.add(bidOrder);
 		bidMap.put(BigDecimal.valueOf(8.2), orderList);
-		List<Trade> trades = LimitOrderMatching.orderMatching("00001", bidMap, askMap);
+		List<Trade> trades = LimitOrderMatchingJob.orderMatching("00001", bidMap, askMap);
 		assertEquals(1, trades.size());	
 		assertEquals(8.5, askMap.firstKey().doubleValue());
 		

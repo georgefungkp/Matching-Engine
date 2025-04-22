@@ -1,6 +1,6 @@
 package equity.fix.server;
 
-import equity.vo.OrderRequest;
+import equity.vo.Order;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -11,17 +11,20 @@ import quickfix.fix44.MessageCracker;
 import quickfix.fix44.NewOrderSingle;
 import util.SequenceGenerator;
 
-import java.math.BigDecimal;
+import java.time.ZonedDateTime;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static quickfix.field.OrdType.MARKET;
 import static quickfix.field.Side.BUY;
 
 
-
+/**
+ * FIXTradeServerApp represents a FIX server application that implements the Application and Runnable interfaces.
+ * It handles incoming FIX messages and processes new order requests.
+ */
 public class FIXTradeServerApp extends MessageCracker implements Application, Runnable {
     private static final Logger log = LogManager.getLogger(FIXTradeServerApp.class);
-    private final LinkedBlockingQueue<OrderRequest> orderQueue;
+    private final LinkedBlockingQueue<Order> orderQueue;
     private final SequenceGenerator executionIDGenerator = new SequenceGenerator(); //thread-safe
     private SessionID sessionID;
 
@@ -76,8 +79,8 @@ public class FIXTradeServerApp extends MessageCracker implements Application, Ru
         try {
             // Send an Execution Report (8) to acknowledge the order
             sendExecutionReport(sessionID, clientOrdID, newOrder, new ExecType(ExecType.NEW), new OrdStatus(OrdStatus.NEW));
-            orderQueue.put(new OrderRequest(stockNo, brokerID, clientOrdID, orderType, direction,
-                    BigDecimal.valueOf(price), (int)quantity));
+            orderQueue.put(new Order(stockNo, brokerID, clientOrdID, orderType, direction,
+                    price, (int)quantity, ZonedDateTime.now(), ZonedDateTime.now()));
             log.debug("Put the {} order of {} to the order queue", direction, stockNo);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -85,8 +88,20 @@ public class FIXTradeServerApp extends MessageCracker implements Application, Ru
 
     }
 
+    /**
+     * Sends an execution report based on the provided parameters.
+     *
+     * @param sessionID the session ID to which the report will be sent
+     * @param clientOrdID the client order ID
+     * @param stockNo the stock number
+     * @param side the side (buy or sell) of the order
+     * @param execType the execution type
+     * @param ordStatus the order status
+     * @param filledQty the quantity filled
+     * @param execPrice the execution price
+     */
     public void sendExecutionReport(SessionID sessionID, String clientOrdID, String stockNo, Side side,
-                                    ExecType execType, OrdStatus ordStatus, int filledQty, BigDecimal execPrice){
+                                    ExecType execType, OrdStatus ordStatus, int filledQty, Double execPrice){
         ExecutionReport executionReport = new ExecutionReport(
             new OrderID(clientOrdID), // Broker-assigned order ID
             new ExecID(String.valueOf(executionIDGenerator.getNextSequence())),  // Execution ID
@@ -95,7 +110,7 @@ public class FIXTradeServerApp extends MessageCracker implements Application, Ru
             side,
             new LeavesQty(0), // No remaining quantity
             new CumQty(filledQty), // Cumulative quantity filled
-            new AvgPx(execPrice.doubleValue()) // Average price
+            new AvgPx(execPrice) // Average price
         );
         executionReport.set(new Symbol(stockNo)); // replace with your symbol
         try {
@@ -131,7 +146,7 @@ public class FIXTradeServerApp extends MessageCracker implements Application, Ru
         }
     }
 
-    public FIXTradeServerApp(LinkedBlockingQueue<OrderRequest> orderQueue) throws ConfigError, InterruptedException {
+    public FIXTradeServerApp(LinkedBlockingQueue<Order> orderQueue) throws ConfigError, InterruptedException {
         this.orderQueue = orderQueue;
     }
 

@@ -32,9 +32,10 @@ List here the prerequisites and links to the installation procedure of each:
 - An IDE of your choice (Although this project was developed using Intellij IDEA)
 
 ### Design consideration
-1. The data structure of order book is <b> Tree map </b> with <b> Array </b>. So, the time complexity of a new limit price is O(log n), and first or last key is O(1) as Java always caches the leftmost/rightmost nodes. For cancellation, it's also O(log n). On average, Tree map is the best choice in JDK implementation.
+1. The data structure of order book is <b> Tree map </b> with <b> LinkedList </b>. So, the time complexity of a new limit price is O(log n), and first or last key is O(1) as Java always caches the leftmost/rightmost nodes. For cancellation, it's also O(log n). On average, Tree map is the best choice in JDK implementation.
 ![Why TreeMap?](https://github.com/georgefungkp/Matching-Engine/blob/main/PQvsTreeMap.jpg)
-
+2. Use Hashmap to record order object reference so that it's easy to amend or cancel the order. 
+3. User Double instead of BigDecimal in the NavigatorMap to save memory footprint (8 bytes vs 32+ bytes).
 
 ## Message cycle of FIX in a trade 
 [The following is just for information. Not every message type is implemented in the project.]
@@ -69,7 +70,7 @@ Zero GC:
 Object pooling reuses objects instead of creating new ones, reducing GC pressure.
 Primitives (e.g., int instead of Integer) avoid object creation, thus reducing heap allocation
 2. StringBuffer instead of String
-3. Use efficient collections (e.g., ArrayList instead of LinkedList when random access is needed).
+3. Use efficient collections (e.g., Use skip list or array instead of LinkedList).
 4. Tune GC settings (e.g., use G1GC or ZGC for low-latency applications
 5. Avoid False Sharing (e.g Use @Contended and/or Thread-Local) to reduce CPU Cache Invalidation
 6. Message sharing: A circular buffer, for example, Disruptor, (or ring buffer) is a fixed-size, low-latency data structure optimized for real-time message processing in HFT. It allows zero-allocation, lock-free reads/writes, making it ideal for ultra-low-latency trading systems
