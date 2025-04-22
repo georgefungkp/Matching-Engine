@@ -64,19 +64,3 @@ Logon(Logon (A)) → 2. New Order(New Order Single (D)) → 3. Order Ack(Executi
 → 4. Execution Report(Execution Report (8) with ExecType=F) → 5. Trade Capture Report(Trade Capture Report (AE))
 → 6. Allocation(Allocation Instruction (AS)) → 7. Settlement(Settlement Instructions (T)) → 8. Logout(Logout (5))
 
-### TO-DO
-Zero GC: 
-1. Use object pooling and primitives (e.g. Apache Commons Pool)
-Object pooling reuses objects instead of creating new ones, reducing GC pressure.
-Primitives (e.g., int instead of Integer) avoid object creation, thus reducing heap allocation
-2. StringBuffer instead of String
-3. Use efficient collections (e.g., Use skip list or array instead of LinkedList).
-4. Tune GC settings (e.g., use G1GC or ZGC for low-latency applications
-5. Avoid False Sharing (e.g Use @Contended and/or Thread-Local) to reduce CPU Cache Invalidation
-6. Message sharing: A circular buffer, for example, Disruptor, (or ring buffer) is a fixed-size, low-latency data structure optimized for real-time message processing in HFT. It allows zero-allocation, lock-free reads/writes, making it ideal for ultra-low-latency trading systems
-7. Real-world compareAndSet (CAS) uses atomic CPU instructions (e.g., CMPXCHG on x86) to merge the check+update into one atomic operation:
-8. -XX:+UseSerialGC # Single-threaded GC (for tiny heaps)
--XX:+UseNUMA # Optimize memory access
--XX:+AlwaysPreTouch # Pre-allocate heap pages
--Xms4G -Xmx4G # Fixed heap size
-9. Leverage zero-GC libraries (Disruptor, Agrona). Aeron, Algoteq
