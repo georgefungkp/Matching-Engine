@@ -53,9 +53,6 @@ public class LimitOrderMatchingJob implements Runnable {
                 continue;
             }
 
-            // if there is limiting order, go to the next cycle
-            if (askMap.isEmpty() || bidMap.isEmpty())
-                continue;
             try {
                 matchTopOrder();
             } catch (InterruptedException e) {
@@ -64,6 +61,14 @@ public class LimitOrderMatchingJob implements Runnable {
         }
     }
 
+
+    public boolean isLimitOrderAvailable(){
+        // if there is limiting order, go to the next cycle
+        if (askMap.isEmpty() || bidMap.isEmpty())
+            return false;
+        // if bestBidPrice < bestAskPrice, go to the next cycle
+        return askMap.lastKey().compareTo(bidMap.lastKey()) <= 0;
+    }
 
     /**
      * Matches the top bid and ask orders to settle the trade.
@@ -75,8 +80,7 @@ public class LimitOrderMatchingJob implements Runnable {
      * @throws InterruptedException if a thread is interrupted while waiting
      */
     public void matchTopOrder() throws InterruptedException {
-        // if bestBidPrice < bestAskPrice, go to the next cycle
-        if (askMap.lastKey().compareTo(bidMap.lastKey()) > 0)
+        if (!isLimitOrderAvailable())
             return;
 
         // BestBidPrice >= BestAskPrice
@@ -104,12 +108,12 @@ public class LimitOrderMatchingJob implements Runnable {
         if (topBid.getQuantity() == 0) {
             Order order = bestBidOrderList.pollFirst();
             if (order != null)
-                orderObjMapper.remove(order.getBrokerId() + order.getClientOrdID());
+                orderObjMapper.remove(order.getBrokerId() + "-" +  order.getClientOrdID());
         }
         if (topAsk.getQuantity() == 0) {
             Order order = bestAskOrderList.pollFirst();
             if (order != null)
-                orderObjMapper.remove(order.getBrokerId() + order.getClientOrdID());
+                orderObjMapper.remove(order.getBrokerId() + "-" + order.getClientOrdID());
         }
 
         // Remove the price in the map if list of order is exhausted

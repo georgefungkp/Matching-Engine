@@ -18,7 +18,7 @@ public class OrderProcessingJob implements Runnable {
     private final LinkedBlockingQueue<Order> orderQueue;
     private final HashMap<String, OrderBook> orderBooks;
     private final ConcurrentHashMap<String, Order> orderObjMapper;
-    private final boolean LOG_ENABLED = true;
+    private static final boolean LOG_ENABLED = true;
     private boolean isInterrupted = false;
 
     /**
@@ -67,7 +67,7 @@ public class OrderProcessingJob implements Runnable {
                 orderList.add(order);
                 orderMap.put(order.getPrice(), orderList);
             }
-            orderObjMapper.put(order.getBrokerId() + order.getClientOrdID(), order);
+            orderObjMapper.put(order.getBrokerId() + "-" + order.getClientOrdID(), order);
             readWriteLock.writeLock().unlock();
         }
 

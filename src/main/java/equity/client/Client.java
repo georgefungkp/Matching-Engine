@@ -30,7 +30,7 @@ public class Client {
 				try {
 					Socket client = new Socket(dotenv.get("server"), Integer.parseInt(Objects.requireNonNull(dotenv.get("port_number"))));
                     log.debug("Thread {} connected to {} on port {}", Thread.currentThread().getName(), dotenv.get("server"), dotenv.get("port_number"));
-					final String response = sendOrderToServer(client, RandomOrderRequestGenerator.getNewLimitOrder());
+					final String response = sendOrderToServer(client, RandomOrderRequestGenerator.getNewLimitOrder(null, null, null, null, null, null));
 
 					log.debug(response);
 //					Thread.sleep(1000);
