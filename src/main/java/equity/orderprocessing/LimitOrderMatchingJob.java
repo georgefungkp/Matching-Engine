@@ -47,7 +47,7 @@ public class LimitOrderMatchingJob implements Runnable {
         while (!isInterrupted) {
             // Pause before next cycle
             try {
-                TimeUnit.SECONDS.sleep(10);
+                TimeUnit.MILLISECONDS.sleep(1);
             } catch (InterruptedException e) {
                 isInterrupted = true;
                 continue;

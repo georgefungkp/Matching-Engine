@@ -77,7 +77,7 @@ public class OrderProcessingJob implements Runnable {
         }
         orderObjMapper.put(order.getBrokerId() + "-" + order.getClientOrdID(), order);
         readWriteLock.writeLock().unlock();
-
+        log.info(order);
         if (LOG_ENABLED)
             orderBook.showMap();
 

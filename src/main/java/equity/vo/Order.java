@@ -3,13 +3,13 @@ import java.time.ZonedDateTime;
 
 public class Order {
     private String stockNo;
-    private String brokerId;
-    private String clientOrdID;
-    private String orderType;
-    private String buyOrSell;
+    private final String brokerId;
+    private final String clientOrdID;
+    private final String orderType;
+    private final String buyOrSell;
     private Double price;
     private int quantity;
-    private ZonedDateTime createdDateTime;
+    private final ZonedDateTime createdDateTime;
     private ZonedDateTime lastEventDateTime;
 
     public Order(String stockNo, String brokerId, String clientOrdID, String orderType,
@@ -45,12 +45,25 @@ public class Order {
     // setters
     public void setStockNo(String stockNo) { this.stockNo = stockNo; }
 
-    public void setBrokerId(String brokerId) { this.brokerId = brokerId; }
-
     public void setPrice(Double price) { this.price = price; }
 
     public void setQuantity(int quantity) { this.quantity = quantity; }
 
     public void setLastEventDateTime(ZonedDateTime lastEventDateTime) { this.lastEventDateTime = lastEventDateTime; }
+
+    @Override
+    public String toString() {
+        return "Order{" +
+                "stockNo='" + stockNo + '\'' +
+                ", brokerId='" + brokerId + '\'' +
+                ", clientOrdID='" + clientOrdID + '\'' +
+                ", orderType='" + orderType + '\'' +
+                ", buyOrSell='" + buyOrSell + '\'' +
+                ", price=" + price +
+                ", quantity=" + quantity +
+                ", createdDateTime=" + createdDateTime +
+                ", lastEventDateTime=" + lastEventDateTime +
+                '}';
+    }
 
 }

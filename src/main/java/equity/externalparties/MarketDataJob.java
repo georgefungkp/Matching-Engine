@@ -16,6 +16,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedList;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static util.ReadConfig.dotenv;
@@ -29,6 +30,12 @@ public class MarketDataJob implements Runnable {
 		this.marketDataQueue = marketDataQueue;
 	}
 
+	/**
+	 * Continuously listens for market data updates from the marketDataQueue and writes the data to a file in a specific format.
+	 * The file will contain information such as stock name, best bid and ask prices, last trade price, and lists of bid and ask orders.
+	 * The file is named based on the stock number and the current date appended with a '.txt' extension.
+	 * If an exception occurs while processing the data or writing to the file, the method will log the error and stop listening for updates.
+	 */
 	@Override
 	public void run() {
 		while (listening) {
@@ -44,40 +51,28 @@ public class MarketDataJob implements Runnable {
 				String bestAskTxt = (data.bestAsk() == null) ? "" : data.bestAsk().toString();
 				String lastTradePrice = (data.lastTradePrice() == null)? "": data.lastTradePrice().toString();
 
-				StringBuilder message = new StringBuilder("Stock Name:" + data.stockNo() + "\n" + "Best Bid Price:" + bestBidTxt + "\n"
-                        + "Best Ask Price:" + bestAskTxt + "\n" + "Last Trade Price:" + lastTradePrice + "\n");
-				message.append("Bid orders\n");
-				for (Entry<Double, LinkedList<Order>> entry : data.bidMap().entrySet()) {
-//					String priceTxt = "";
-//					if (entry.getKey().equals(BigDecimal.valueOf(Integer.MAX_VALUE))){
-//						priceTxt = "M";
-//					}
-//					message.append(priceTxt).append("\n");
-					for (Order order : entry.getValue()) {
-						message.append(order.getBrokerId()).append(" ").append(order.getQuantity()).append("\n");
-					}
-				}
-				message.append("Ask orders\n");
-				for (Entry<Double, LinkedList<Order>> entry : data.askMap().entrySet()) {
-//					String priceTxt = "";
-//					if (entry.getKey().equals(BigDecimal.valueOf(0))){
-//						priceTxt = "M";
-//					}
-//					message.append(priceTxt).append("\n");
-					for (Order order : entry.getValue()) {
-						message.append(order.getBrokerId()).append(" ").append(order.getQuantity()).append("\n");
-					}
-				}
-//				log.debug("Saving " + message + " into marketing_data." + data.getStockNo() + "_"
-//						+ LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + ".txt");
-				fileChannel.write(ByteBuffer.wrap(message.toString().getBytes()));
+                String message = "Stock Name:" + data.stockNo() + "\n" + "Best Bid Price:" + bestBidTxt + "\n"
+                        + "Best Ask Price:" + bestAskTxt + "\n" + "Last Trade Price:" + lastTradePrice + "\n" + "Bid orders\n" +
+                        orderBookToTxt(data.bidMap()) +
+                        "Ask orders\n" +
+                        orderBookToTxt(data.askMap());
+				fileChannel.write(ByteBuffer.wrap(message.getBytes()));
 				fileChannel.close(); // also releases the lock
 			} catch (InterruptedException | IOException e) {
-				// TODO Auto-generated catch block
 				log.error(e);
 				listening = false;
 			}
 		}
+	}
+
+	public StringBuilder orderBookToTxt(TreeMap<Double, LinkedList<Order>> orderBook){
+		StringBuilder message = new StringBuilder();
+		for (Entry<Double, LinkedList<Order>> entry : orderBook.entrySet()) {
+			for (Order order : entry.getValue()) {
+				message.append(order.getBrokerId()).append("-").append(order.getClientOrdID()).append(" ").append(order.getPrice()).append(" ").append(order.getQuantity()).append("\n");
+			}
+		}
+		return message;
 	}
 
 }

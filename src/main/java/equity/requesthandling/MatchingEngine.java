@@ -11,7 +11,6 @@ import equity.vo.OrderBook;
 import equity.vo.Trade;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import quickfix.ConfigError;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -45,7 +44,7 @@ public class MatchingEngine extends Thread {
     private boolean listening = true;
 
 
-    public MatchingEngine() throws ConfigError, InterruptedException {
+    public MatchingEngine() {
         System.out.println(System.getProperty("java.class.path"));
         fixTradeServerApp = new FIXTradeServerApp(orderQueue);
         new Thread(fixTradeServerApp).start();
@@ -53,7 +52,7 @@ public class MatchingEngine extends Thread {
         noOfStock = Integer.parseInt(Objects.requireNonNull(dotenv.get("no_of_stock")));
     }
 
-    public static void main(String[] args) throws ConfigError, InterruptedException {
+    public static void main(String[] args) {
         MatchingEngine server = new MatchingEngine();
         server.startProcessingJobs();
         server.start();
@@ -102,7 +101,7 @@ public class MatchingEngine extends Thread {
                      DataOutputStream out = new DataOutputStream(server.getOutputStream())) {
                     Order order = createOrder(in.readLine());
                     orderQueue.put(order);
-                    log.debug("Order Queue: {}", orderQueue);
+                    log.debug("Order Queue: {}", orderQueue.size());
                     out.writeUTF(server.getLocalSocketAddress() + SUCCESS_MSG_TEMPLATE);
                 } catch (Exception e) {
                     log.error(e);
@@ -122,9 +121,12 @@ public class MatchingEngine extends Thread {
      * @return the created Order object with the parsed order details
      */
     private Order createOrder(String value) {
+//        		String message = order.getStockNo() + ":" + order.getBrokerId() + ":" + order.getClientOrdID() + ":"
+//				+ order.getOrderType() + ":" + order.getBuyOrSell() + ":"
+//				+ order.getPrice() + ":" + order.getQuantity();
         String[] tokens = value.split(":");
-        return new Order(tokens[0], tokens[1], tokens[2], tokens[3], tokens[4], Double.valueOf(tokens[4]),
-                Integer.parseInt(tokens[5]), ZonedDateTime.now(), ZonedDateTime.now());
+        return new Order(tokens[0], tokens[1], tokens[2], tokens[3], tokens[4], Double.valueOf(tokens[5]),
+                Integer.parseInt(tokens[6]), ZonedDateTime.now(), ZonedDateTime.now());
     }
 
     @Override

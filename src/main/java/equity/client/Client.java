@@ -25,12 +25,13 @@ public class Client {
 	public static ExecutorService executor = Executors.newFixedThreadPool(5);
 
 	public static void main(String[] args) {
-		for (int i = 0; i < 1; i++) {
+		for (int i = 0; i < 100; i++) {
+			int finalI = i;
 			executor.execute(() -> {
 				try {
 					Socket client = new Socket(dotenv.get("server"), Integer.parseInt(Objects.requireNonNull(dotenv.get("port_number"))));
                     log.debug("Thread {} connected to {} on port {}", Thread.currentThread().getName(), dotenv.get("server"), dotenv.get("port_number"));
-					final String response = sendOrderToServer(client, RandomOrderRequestGenerator.getNewLimitOrder(null, null, null, null, null, null));
+					final String response = sendOrderToServer(client, RandomOrderRequestGenerator.getNewLimitOrder("00001", String.format("%03d", finalI), null, null, null, null));
 
 					log.debug(response);
 //					Thread.sleep(1000);

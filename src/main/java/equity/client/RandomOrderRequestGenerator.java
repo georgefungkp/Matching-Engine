@@ -7,6 +7,7 @@ import java.math.RoundingMode;
 import java.time.ZonedDateTime;
 import java.util.Random;
 
+
 /**
  * This class generates random order request objects for demonstration purposes.
  */
@@ -15,17 +16,17 @@ public class RandomOrderRequestGenerator {
 
 	public static Order getNewLimitOrder(String stockNo, String brokerId, String clientOrdId, String direction, Double price, Integer qty) {
 		if (stockNo == null)
-			stockNo = String.format("%05d", randomSeed.nextInt(3) + 1);
+			stockNo = String.format("%05d", randomSeed.nextInt(1,3) + 1);
 		if (brokerId == null)
-			brokerId = String.format("%03d", randomSeed.nextInt(10) + 1);
+			brokerId = String.format("%03d", randomSeed.nextInt(1,10) + 1);
 		if (clientOrdId == null)
-			clientOrdId = String.format("%05d", randomSeed.nextInt(10) + 1);
+			clientOrdId = String.format("%05d", randomSeed.nextInt(1,10) + 1);
 		if (direction == null)
 			direction = randomSeed.nextBoolean() ? "B" : "S";
 		if (price == null)
-			price = BigDecimal.valueOf(randomSeed.nextDouble() * 100).setScale(2, RoundingMode.HALF_UP).doubleValue();
+			price = BigDecimal.valueOf(randomSeed.nextDouble(0.1, 0.5) * 100).setScale(2, RoundingMode.HALF_UP).doubleValue();
 		if (qty == null)
-			qty = randomSeed.nextInt(1000);
+			qty = randomSeed.nextInt(1,9) * 10;
 		String orderType = "L";
 		ZonedDateTime createTime = ZonedDateTime.now();
 		ZonedDateTime eventTime = ZonedDateTime.now();
