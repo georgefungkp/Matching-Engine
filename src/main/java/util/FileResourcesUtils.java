@@ -18,7 +18,7 @@ public class FileResourcesUtils {
         //String fileName = "database.properties";
         String fileName = "json/file1.json";
 
-        log.debug("getResourceAsStream : " + fileName);
+        log.debug("getResourceAsStream : {}", fileName);
         InputStream is = app.getFileFromResourceAsStream(fileName);
         printInputStream(is);
 

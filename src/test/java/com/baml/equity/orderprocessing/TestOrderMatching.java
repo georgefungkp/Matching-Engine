@@ -17,11 +17,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class TestOrderMatching {
-//    // Bid order book
-//    protected TreeMap<Double, LinkedList<Order>> bidMap = new TreeMap<>();
-//    // Ask order book
-//	protected TreeMap<Double, LinkedList<Order>> askMap = new TreeMap<>(Comparator.reverseOrder());
-
     private static final ConcurrentHashMap<String, Order> orderObjMapper = new ConcurrentHashMap<>();
 	@Spy
 	private LinkedBlockingQueue<MarketData>	marketDataQueue = new LinkedBlockingQueue<>();
@@ -32,6 +27,11 @@ public class TestOrderMatching {
 	int noOfStocks = 2;
 	OrderBook[] orderBooks = new OrderBook[noOfStocks];
 
+	/**
+	 * Set up method to prepare order books, order matching job, and sample orders for testing.
+	 * Initializes order books for each stock with predefined bid and ask orders.
+	 * Creates a LimitOrderMatchingJob for order matching simulation.
+	 */
     @BeforeEach
 	protected void setUp() {
 		for (int i=1; i<=noOfStocks; i++ ) {
@@ -46,27 +46,41 @@ public class TestOrderMatching {
 		orderList1.add(bidOrder1);
 		orderBook.getBidMap().put(bidOrder1.getPrice(), orderList1);
 
+		Order bidOrder2 = RandomOrderRequestGenerator.getNewLimitOrder("00001", "Broker 1",
+				"002", "B", 8.1, 100);
+        orderObjMapper.put(bidOrder2.getBrokerId() + "-" + bidOrder2.getClientOrdID(), bidOrder2);
+		LinkedList<Order> orderList2 = new LinkedList<>();
+		orderList2.add(bidOrder2);
+		orderBook.getBidMap().put(bidOrder2.getPrice(), orderList2);
+
+
 		Order askOrder1 = RandomOrderRequestGenerator.getNewLimitOrder("00001", "Broker 2",
 				"002", "S", 8.2, 100);
         orderObjMapper.put(askOrder1.getBrokerId() + "-" + askOrder1.getClientOrdID(), askOrder1);
+		LinkedList<Order> orderList3 = new LinkedList<>();
+		orderList3.add(askOrder1);
+		orderBook.getAskMap().put(askOrder1.getPrice(), orderList3);
+
 
 		Order askOrder2 = RandomOrderRequestGenerator.getNewLimitOrder("00001", "Broker 2",
 				"003", "S", 8.5, 300);
         orderObjMapper.put(askOrder2.getBrokerId() + "-" + askOrder2.getClientOrdID(), askOrder2);
-
 		Order askOrder3 = RandomOrderRequestGenerator.getNewLimitOrder("00001", "Broker 2",
 				"004", "S", 8.5, 400);
         orderObjMapper.put(askOrder3.getBrokerId() + "-" + askOrder3.getClientOrdID(), askOrder3);
-
-		LinkedList<Order> orderList2 = new LinkedList<>();
-		orderList2.add(askOrder1);
-		orderBook.getAskMap().put(askOrder1.getPrice(), orderList2);
-		LinkedList<Order> orderList3 = new LinkedList<>();
-		orderList3.add(askOrder2);
-		orderList3.add(askOrder3);
-		orderBook.getAskMap().put(askOrder2.getPrice(), orderList3);
+		LinkedList<Order> orderList4 = new LinkedList<>();
+		orderList4.add(askOrder2);
+		orderList4.add(askOrder3);
+		orderBook.getAskMap().put(askOrder2.getPrice(), orderList4);
 	}
 
+	/**
+	 * Method for testing the partial fill functionality of order matching.
+	 * This method simulates multiple cycles of matching top bid and ask orders,
+	 * verifying market data updates and trade executions each time.
+	 *
+	 * @throws InterruptedException if a thread is interrupted while waiting
+	 */
     @Test
 	public void testPartialFill() throws InterruptedException {
 		// First cycle
@@ -87,10 +101,10 @@ public class TestOrderMatching {
 		orderMatching.matchTopOrder();
 		MarketData marketData2 = marketDataQueue.poll();
         assertNotNull(marketData2);
-        assertNull(marketData2.bestBid());
+        assertEquals(8.1, marketData2.bestBid());
         assertEquals(8.5, marketData2.bestAsk());
         assertEquals(8.5, marketData2.lastTradePrice());
-		assertEquals(0, marketData2.bidMap().size());
+		assertEquals(1, marketData2.bidMap().size());
 		assertEquals(2, marketData2.askMap().get(8.5).size());
 		Order order = marketData2.askMap().get(8.5).peek();
 		assertNotNull(order);
@@ -145,6 +159,11 @@ public class TestOrderMatching {
 		assertNull(tradeDataQueue.poll());
 	}
 
+	/**
+	 * Method to test how matching engine preform on big bid order
+	 *
+	 * @throws InterruptedException if a thread is interrupted while waiting
+	 */
 	@Test
 	public void testBigBidOrder() throws InterruptedException {
 		Order bidOrder2 = RandomOrderRequestGenerator.getNewLimitOrder("00001", "Broker 1",
@@ -197,6 +216,13 @@ public class TestOrderMatching {
 		assertEquals(400, trade3.executedQty());
 	}
 
+	/**
+	 * Method to test the matching functionality of the order matching job by setting up a sample order book
+	 * with a bid and ask order at the same price level. It then matches these orders, validates the market data
+	 * updates, and verifies the trade details after the matching process.
+	 *
+	 * @throws InterruptedException if a thread is interrupted while waiting
+	 */
 	@Test
 	public void testJustMatch() throws InterruptedException {
 //		stock No 2

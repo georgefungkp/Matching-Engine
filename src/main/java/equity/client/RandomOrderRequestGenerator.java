@@ -33,18 +33,22 @@ public class RandomOrderRequestGenerator {
 		return new Order(stockNo, brokerId, clientOrdId, orderType, direction, price, qty, createTime, eventTime);
 	}
 
-	public static Order getNewMarketOrder() {
-		String stockNo = String.format("%05d", randomSeed.nextInt(3) + 1);
-		String brokerId = String.format("%03d", randomSeed.nextInt(10) + 1);
-		String clientOrdId = String.format("%05d", randomSeed.nextInt(10) + 1);
-		String direction = randomSeed.nextBoolean() ? "B" : "S";
+	public static Order getNewMarketOrder(String stockNo, String brokerId, String clientOrdId, String direction, Integer qty) {
+		if (stockNo == null)
+			stockNo = String.format("%05d", randomSeed.nextInt(3) + 1);
+		if (brokerId == null)
+			brokerId = String.format("%03d", randomSeed.nextInt(10) + 1);
+		if (clientOrdId == null)
+			clientOrdId = String.format("%05d", randomSeed.nextInt(10) + 1);
+		if (direction == null)
+			direction = randomSeed.nextBoolean() ? "B" : "S";
+		if (qty == null)
+			qty = randomSeed.nextInt(1000);
 		String orderType = "M";
-		Double price = BigDecimal.valueOf(randomSeed.nextDouble() * 100).setScale(2, RoundingMode.HALF_UP).doubleValue();
-		int quantity = randomSeed.nextInt(1000);
 		ZonedDateTime createTime = ZonedDateTime.now();
 		ZonedDateTime eventTime = ZonedDateTime.now();
 
-		return new Order(stockNo, brokerId, clientOrdId, orderType, direction, price, quantity, createTime, eventTime);
+		return new Order(stockNo, brokerId, clientOrdId, orderType, direction, null, qty, createTime, eventTime);
 	}
 
 }

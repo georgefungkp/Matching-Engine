@@ -5,8 +5,8 @@ import equity.vo.OrderBook;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -16,7 +16,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class OrderProcessingJob implements Runnable {
     private static final Logger log = LogManager.getLogger(OrderProcessingJob.class);
     private final LinkedBlockingQueue<Order> orderQueue;
-    private final HashMap<String, OrderBook> orderBooks;
+    private final Map<String, OrderBook> orderBooks;
     private final ConcurrentHashMap<String, Order> orderObjMapper;
     private static final boolean LOG_ENABLED = true;
     private boolean isInterrupted = false;
@@ -28,7 +28,7 @@ public class OrderProcessingJob implements Runnable {
      * @param orderBooks a map of order books for different stock numbers
      * @param orderObjMapper a mapping of order objects identified by broker ID and client order ID
      */
-    public OrderProcessingJob(LinkedBlockingQueue<Order> orderQueue, HashMap<String, OrderBook> orderBooks, ConcurrentHashMap<String, Order> orderObjMapper) {
+    public OrderProcessingJob(LinkedBlockingQueue<Order> orderQueue, Map<String, OrderBook> orderBooks, ConcurrentHashMap<String, Order> orderObjMapper) {
         this.orderQueue = orderQueue;
         this.orderBooks = orderBooks;
         this.orderObjMapper = orderObjMapper;
@@ -55,21 +55,28 @@ public class OrderProcessingJob implements Runnable {
             orderMap = orderBook.getAskMap();
             readWriteLock = orderBook.getAskLock();
         }
+        // Set market order to be the best available price
+        if ("M".equals(order.getOrderType()))
+            if ("B".equals(order.getBuyOrSell()))
+                order.setPrice(orderBook.getHighestAsk());
+            else
+                order.setPrice(orderBook.getLowestBid());
 
-        // Put order to order book if it's limited order
-        if ("L".equals(order.getOrderType())) {
-            readWriteLock.writeLock().lock();
-            if (orderMap.containsKey(order.getPrice())) {
-                LinkedList<Order> orderList = orderMap.get(order.getPrice());
-                orderList.add(order);
-            } else {
-                LinkedList<Order> orderList = new LinkedList<>();
-                orderList.add(order);
-                orderMap.put(order.getPrice(), orderList);
-            }
-            orderObjMapper.put(order.getBrokerId() + "-" + order.getClientOrdID(), order);
-            readWriteLock.writeLock().unlock();
+        // Put order to order book
+        readWriteLock.writeLock().lock();
+        if (orderMap.containsKey(order.getPrice())) {
+            LinkedList<Order> orderList = orderMap.get(order.getPrice());
+            if ("M".equals(order.getOrderType()))
+                orderList.addFirst(order);
+            else
+                orderList.addLast(order);
+        } else {
+            LinkedList<Order> orderList = new LinkedList<>();
+            orderList.add(order);
+            orderMap.put(order.getPrice(), orderList);
         }
+        orderObjMapper.put(order.getBrokerId() + "-" + order.getClientOrdID(), order);
+        readWriteLock.writeLock().unlock();
 
         if (LOG_ENABLED)
             orderBook.showMap();
@@ -87,7 +94,7 @@ public class OrderProcessingJob implements Runnable {
                     log.debug("Stock no is incorrect. Order is ignored");
                     continue;
                 }
-                this.putOrder(order);
+                putOrder(order);
             } catch (InterruptedException e) {
                 log.debug("{} is going down.", this.getClass().getSimpleName());
                 isInterrupted = true;

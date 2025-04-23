@@ -115,9 +115,9 @@ public class FIXTradeServerApp extends MessageCracker implements Application, Ru
         executionReport.set(new Symbol(stockNo)); // replace with your symbol
         try {
             Session.sendToTarget(executionReport, sessionID);
-            log.debug("Sent Execution Report (8)");
+            log.debug("Sent Execution Report");
         } catch (SessionNotFound e) {
-            log.error("Session not found: " + e.getMessage());
+            log.error("Session not found: {}", e.getMessage());
         }
     }
 
@@ -140,50 +140,50 @@ public class FIXTradeServerApp extends MessageCracker implements Application, Ru
         // Send the Execution Report
         try {
             Session.sendToTarget(executionReport, sessionID);
-            log.debug("Sent Execution Report (8)");
+            log.debug("Sent Execution Report");
         } catch (SessionNotFound e) {
-            log.error("Session not found: " + e.getMessage());
+            log.error("Session not found: {}", e.getMessage());
         }
     }
 
-    public FIXTradeServerApp(LinkedBlockingQueue<Order> orderQueue) throws ConfigError, InterruptedException {
+    public FIXTradeServerApp(LinkedBlockingQueue<Order> orderQueue) {
         this.orderQueue = orderQueue;
     }
 
     @Override
     public void onCreate(SessionID sessionID) {
-        log.debug("Session created: " + sessionID);
+        log.debug("Session created: {}", sessionID);
     }
 
     @Override
     public void onLogon(SessionID sessionID) {
         this.sessionID = sessionID;
-        log.debug("Logged on: " + sessionID);
+        log.debug("Logged on: {}", sessionID);
     }
 
     @Override
     public void onLogout(SessionID sessionID) {
-        log.debug("Logged out: " + sessionID);
+        log.debug("Logged out: {}", sessionID);
     }
 
     @Override
     public void toAdmin(Message message, SessionID sessionID) {
-        log.debug("toAdmin: " + message);
+        log.debug("toAdmin: {}", message);
     }
 
     @Override
-    public void fromAdmin(Message message, SessionID sessionID) throws FieldNotFound, IncorrectDataFormat, IncorrectTagValue, RejectLogon {
-        log.debug("fromAdmin: " + message);
+    public void fromAdmin(Message message, SessionID sessionID) {
+        log.debug("fromAdmin: {}", message);
     }
 
     @Override
-    public void toApp(Message message, SessionID sessionID) throws DoNotSend {
-        log.debug("toApp: " + message);
+    public void toApp(Message message, SessionID sessionID) {
+        log.debug("toApp: {}", message);
     }
 
     @Override
-    public void fromApp(Message message, SessionID sessionID) throws FieldNotFound, IncorrectDataFormat, IncorrectTagValue, UnsupportedMessageType {
-        log.debug("fromApp: " + message);
+    public void fromApp(Message message, SessionID sessionID) throws FieldNotFound, IncorrectTagValue, UnsupportedMessageType {
+        log.debug("fromApp: {}", message);
         crack(message, sessionID); // Route the message to the appropriate handler
     }
 
@@ -191,7 +191,5 @@ public class FIXTradeServerApp extends MessageCracker implements Application, Ru
         return sessionID;
     }
 
-//    public static void main(String[] args) throws ConfigError, InterruptedException {
-//
-//    }
+
 }

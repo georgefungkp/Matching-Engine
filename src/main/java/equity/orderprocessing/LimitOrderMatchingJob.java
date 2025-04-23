@@ -86,8 +86,8 @@ public class LimitOrderMatchingJob implements Runnable {
         // BestBidPrice >= BestAskPrice
         orderBook.getBidLock().writeLock().lock();
         orderBook.getAskLock().writeLock().lock();
-        LinkedList<Order> bestAskOrderList = askMap.lastEntry().getValue();
         LinkedList<Order> bestBidOrderList = bidMap.lastEntry().getValue();
+        LinkedList<Order> bestAskOrderList = askMap.lastEntry().getValue();
         Order topBid = bestBidOrderList.peekFirst();
         Order topAsk = bestAskOrderList.peekFirst();
 
@@ -100,40 +100,45 @@ public class LimitOrderMatchingJob implements Runnable {
         topAsk.setQuantity(topAsk.getQuantity() - filledQty);
         topAsk.setLastEventDateTime(ZonedDateTime.now());
         Double tradePrice = askMap.lastEntry().getKey();
-        // Notify client that order is settled
-        resultingTradeQueue.put(new Trade(topBid.getBrokerId(), topAsk.getBrokerId(), topBid.getClientOrdID(), topAsk.getClientOrdID(),
-                orderBook.getStockNo(), tradePrice, filledQty, LocalDateTime.now().toString()));
+        try {
+            // Notify client that order is settled
+            resultingTradeQueue.put(new Trade(topBid.getBrokerId(), topAsk.getBrokerId(), topBid.getClientOrdID(), topAsk.getClientOrdID(),
+                    orderBook.getStockNo(), tradePrice, filledQty, LocalDateTime.now().toString()));
 
-        // Remove order if it's totally filled
-        if (topBid.getQuantity() == 0) {
-            Order order = bestBidOrderList.pollFirst();
-            if (order != null)
-                orderObjMapper.remove(order.getBrokerId() + "-" +  order.getClientOrdID());
+            // Remove order if it's totally filled
+            if (topBid.getQuantity() == 0) {
+                Order order = bestBidOrderList.pollFirst();
+                if (order != null)
+                    orderObjMapper.remove(order.getBrokerId() + "-" + order.getClientOrdID());
+            }
+            if (topAsk.getQuantity() == 0) {
+                Order order = bestAskOrderList.pollFirst();
+                if (order != null)
+                    orderObjMapper.remove(order.getBrokerId() + "-" + order.getClientOrdID());
+            }
+
+            // Remove the price in the map if list of order is exhausted
+            if (bestAskOrderList.isEmpty())
+                askMap.pollLastEntry();
+            if (bestBidOrderList.isEmpty())
+                bidMap.pollLastEntry();
+
+            // Downgrade to read lock for market data access
+            orderBook.getBidLock().readLock().lock();
+            orderBook.getAskLock().readLock().lock();
+        }finally {
+            orderBook.getBidLock().writeLock().unlock();
+            orderBook.getAskLock().writeLock().unlock();
         }
-        if (topAsk.getQuantity() == 0) {
-            Order order = bestAskOrderList.pollFirst();
-            if (order != null)
-                orderObjMapper.remove(order.getBrokerId() + "-" + order.getClientOrdID());
-        }
-
-        // Remove the price in the map if list of order is exhausted
-        if (bestAskOrderList.isEmpty())
-            askMap.pollLastEntry();
-        if (bestBidOrderList.isEmpty())
-            bidMap.pollLastEntry();
-
-        // Downgrade to read lock for market data access
-        orderBook.getBidLock().readLock().lock();
-        orderBook.getAskLock().readLock().lock();
-        orderBook.getBidLock().writeLock().unlock();
-        orderBook.getAskLock().writeLock().unlock();
 
         // Send market data
-        marketDataQueue.put(new MarketData(stockNo, orderBook.getBestBid(), orderBook.getBestAsk(),
-                tradePrice, Timestamp.from(Instant.now()), bidMap, askMap));
-
-        orderBook.getBidLock().readLock().unlock();
-        orderBook.getAskLock().readLock().unlock();
+        try {
+            marketDataQueue.put(new MarketData(stockNo, orderBook.getBestBid(), orderBook.getBestAsk(),
+                    tradePrice, Timestamp.from(Instant.now()), bidMap, askMap));
+        }finally{
+            orderBook.getBidLock().readLock().unlock();
+            orderBook.getAskLock().readLock().unlock();
+            }
 
     }
 }
