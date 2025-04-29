@@ -1,7 +1,7 @@
 package equity.orderprocessing;
 
-import equity.vo.Order;
-import equity.vo.OrderBook;
+import equity.objectpooling.Order;
+import equity.objectpooling.OrderBook;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -75,7 +75,7 @@ public class OrderProcessingJob implements Runnable {
             orderList.add(order);
             orderMap.put(order.getPrice(), orderList);
         }
-        orderObjMapper.put(order.getBrokerId() + "-" + order.getClientOrdID(), order);
+        orderObjMapper.put(order.getBrokerID() + "-" + order.getClientOrdID(), order);
         readWriteLock.writeLock().unlock();
         log.info(order);
         if (LOG_ENABLED)

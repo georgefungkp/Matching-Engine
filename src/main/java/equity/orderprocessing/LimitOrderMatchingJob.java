@@ -1,9 +1,6 @@
 package equity.orderprocessing;
 
-import equity.vo.MarketData;
-import equity.vo.Order;
-import equity.vo.OrderBook;
-import equity.vo.Trade;
+import equity.objectpooling.*;
 
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -66,16 +63,16 @@ public class LimitOrderMatchingJob implements Runnable {
         // if there is limiting order, go to the next cycle
         if (askMap.isEmpty() || bidMap.isEmpty())
             return false;
-        // if bestBidPrice < bestAskPrice, go to the next cycle
+        // if bestBIDPrice < bestAskPrice, go to the next cycle
         return askMap.lastKey().compareTo(bidMap.lastKey()) <= 0;
     }
 
     /**
-     * Matches the top bid and ask orders to settle the trade.
-     * The method acquires locks for the bid and ask portions of the order book, fetches the top bid and ask orders,
+     * Matches the top bID and ask orders to settle the trade.
+     * The method acquires locks for the bID and ask portions of the order book, fetches the top bID and ask orders,
      * calculates the filled quantity between them, updates the order quantities, sends market data,
      * notifies clients of the settled trade, and removes orders if they are completed.
-     * Additionally, it cleans up the price entries in the bid and ask maps if necessary.
+     * Additionally, it cleans up the price entries in the bID and ask maps if necessary.
      *
      * @throws InterruptedException if a thread is interrupted while waiting
      */
@@ -102,19 +99,23 @@ public class LimitOrderMatchingJob implements Runnable {
         Double tradePrice = askMap.lastEntry().getKey();
         try {
             // Notify client that order is settled
-            resultingTradeQueue.put(new Trade(topBid.getBrokerId(), topAsk.getBrokerId(), topBid.getClientOrdID(), topAsk.getClientOrdID(),
+            resultingTradeQueue.put(new Trade(topBid.getBrokerID(), topAsk.getBrokerID(), topBid.getClientOrdID(), topAsk.getClientOrdID(),
                     orderBook.getStockNo(), tradePrice, filledQty, LocalDateTime.now().toString()));
 
             // Remove order if it's totally filled
             if (topBid.getQuantity() == 0) {
                 Order order = bestBidOrderList.pollFirst();
-                if (order != null)
-                    orderObjMapper.remove(order.getBrokerId() + "-" + order.getClientOrdID());
+                if (order != null) {
+                    orderObjMapper.remove(order.getBrokerID() + "-" + order.getClientOrdID());
+                    OrderManager.returnOrder(order);
+                }
             }
             if (topAsk.getQuantity() == 0) {
                 Order order = bestAskOrderList.pollFirst();
-                if (order != null)
-                    orderObjMapper.remove(order.getBrokerId() + "-" + order.getClientOrdID());
+                if (order != null) {
+                    orderObjMapper.remove(order.getBrokerID() + "-" + order.getClientOrdID());
+                    OrderManager.returnOrder(order);
+                }
             }
 
             // Remove the price in the map if list of order is exhausted

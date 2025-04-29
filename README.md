@@ -36,7 +36,8 @@ List here the prerequisites and links to the installation procedure of each:
 ![Why TreeMap?](https://github.com/georgefungkp/Matching-Engine/blob/main/PQvsTreeMap.jpg)
 2. Use Hashmap to record order object reference so that it's easy to amend or cancel the order. 
 3. User Double instead of BigDecimal in the NavigatorMap to save memory footprint (8 bytes vs 32+ bytes).
-4. Difference exchanges give different priority to market order. In this design, market order is treated as the best available order and is executed first.
+4. Order object pool is created so that we can minimize number of objects and times of GC in the memory, and reduce latency of order creation.
+5. Difference exchanges give different priority to market order. In this design, market order is treated as the best available order and is executed first.
 
 ## Message cycle of FIX in a trade 
 [The following is just for information. Not every message type is implemented in the project.]

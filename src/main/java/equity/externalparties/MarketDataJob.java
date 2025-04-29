@@ -1,7 +1,7 @@
 package equity.externalparties;
 
-import equity.vo.MarketData;
-import equity.vo.Order;
+import equity.objectpooling.MarketData;
+import equity.objectpooling.Order;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -32,7 +32,7 @@ public class MarketDataJob implements Runnable {
 
 	/**
 	 * Continuously listens for market data updates from the marketDataQueue and writes the data to a file in a specific format.
-	 * The file will contain information such as stock name, best bid and ask prices, last trade price, and lists of bid and ask orders.
+	 * The file will contain information such as stock name, best bID and ask prices, last trade price, and lists of bID and ask orders.
 	 * The file is named based on the stock number and the current date appended with a '.txt' extension.
 	 * If an exception occurs while processing the data or writing to the file, the method will log the error and stop listening for updates.
 	 */
@@ -69,7 +69,7 @@ public class MarketDataJob implements Runnable {
 		StringBuilder message = new StringBuilder();
 		for (Entry<Double, LinkedList<Order>> entry : orderBook.entrySet()) {
 			for (Order order : entry.getValue()) {
-				message.append(order.getBrokerId()).append("-").append(order.getClientOrdID()).append(" ").append(order.getPrice()).append(" ").append(order.getQuantity()).append("\n");
+				message.append(order.getBrokerID()).append("-").append(order.getClientOrdID()).append(" ").append(order.getPrice()).append(" ").append(order.getQuantity()).append("\n");
 			}
 		}
 		return message;

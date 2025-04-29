@@ -3,12 +3,11 @@ package equity.requesthandling;
 import equity.externalparties.MarketDataJob;
 import equity.externalparties.ResultingTradeJob;
 import equity.fix.server.FIXTradeServerApp;
+import equity.objectpooling.*;
+import equity.objectpooling.Order.Action;
+import equity.objectpooling.Order.OrderType;
 import equity.orderprocessing.LimitOrderMatchingJob;
 import equity.orderprocessing.OrderProcessingJob;
-import equity.vo.MarketData;
-import equity.vo.Order;
-import equity.vo.OrderBook;
-import equity.vo.Trade;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -18,7 +17,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -60,8 +58,8 @@ public class MatchingEngine extends Thread {
 
     /**
      * This method initializes and starts multiple order matching jobs for the stocks based on the configured number of stocks.
-     * Each stock is associated with an OrderBook that contains bid and ask order maps. A new thread is created for each OrderBook
-     * and a LimitOrderMatchingJob is executed on that thread to match bid and ask orders.
+     * Each stock is associated with an OrderBook that contains bID and ask order maps. A new thread is created for each OrderBook
+     * and a LimitOrderMatchingJob is executed on that thread to match bID and ask orders.
      */
     private void startOrderMatchingJobs(){
         for (int i=0;i<noOfStock;i++) {
@@ -114,19 +112,19 @@ public class MatchingEngine extends Thread {
 
 
     /**
-     * Creates an Order object based on the provided input value.
+     * Creates an Order object based on the provIDed input value.
      *
      * @param value the string value containing order information separated by ":" in the format:
-     *              "stockNo : brokerId : orderType : buyOrSell : price : quantity"
+     *              "stockNo : brokerID : orderType : buyOrSell : price : quantity"
      * @return the created Order object with the parsed order details
      */
     private Order createOrder(String value) {
-//        		String message = order.getStockNo() + ":" + order.getBrokerId() + ":" + order.getClientOrdID() + ":"
+//        		String message = order.getStockNo() + ":" + order.getBrokerID() + ":" + order.getClientOrdID() + ":"
 //				+ order.getOrderType() + ":" + order.getBuyOrSell() + ":"
 //				+ order.getPrice() + ":" + order.getQuantity();
         String[] tokens = value.split(":");
-        return new Order(tokens[0], tokens[1], tokens[2], tokens[3], tokens[4], Double.valueOf(tokens[5]),
-                Integer.parseInt(tokens[6]), ZonedDateTime.now(), ZonedDateTime.now());
+        return OrderManager.requestOrder(tokens[0], tokens[1], tokens[2], OrderType.getByValue(tokens[3]), Action.getByValue(tokens[4]), Double.valueOf(tokens[5]),
+                Integer.parseInt(tokens[6]));
     }
 
     @Override

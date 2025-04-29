@@ -1,6 +1,6 @@
 package equity.client;
 
-import equity.vo.Order;
+import equity.objectpooling.Order;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -55,7 +55,7 @@ public class Client {
 	private static @NotNull String sendOrderToServer(Socket client, Order order) throws IOException {
 		DataOutputStream outToServer = new DataOutputStream(client.getOutputStream());
 		//Stock No: Broker ID: Order Type: B/S: Price: Quantity
-		String message = order.getStockNo() + ":" + order.getBrokerId() + ":" + order.getClientOrdID() + ":"
+		String message = order.getStockNo() + ":" + order.getBrokerID() + ":" + order.getClientOrdID() + ":"
 				+ order.getOrderType() + ":" + order.getBuyOrSell() + ":"
 				+ order.getPrice() + ":" + order.getQuantity();
 //					message = "00001:003:L:B:8.1:500";

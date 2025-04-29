@@ -1,4 +1,4 @@
-package equity.vo;
+package equity.objectpooling;
 
 import java.sql.Timestamp;
 import java.util.LinkedList;

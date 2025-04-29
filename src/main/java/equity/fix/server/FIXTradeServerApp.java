@@ -1,6 +1,9 @@
 package equity.fix.server;
 
-import equity.vo.Order;
+import equity.objectpooling.OrderManager;
+import equity.objectpooling.Order;
+import equity.objectpooling.Order.Action;
+import equity.objectpooling.Order.OrderType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -11,7 +14,6 @@ import quickfix.fix44.MessageCracker;
 import quickfix.fix44.NewOrderSingle;
 import util.SequenceGenerator;
 
-import java.time.ZonedDateTime;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static quickfix.field.OrdType.MARKET;
@@ -65,23 +67,22 @@ public class FIXTradeServerApp extends MessageCracker implements Application, Ru
         String clientOrdID = newOrder.getClOrdID().getValue();
         String brokerID = newOrder.getClOrdID().getValue();
         String stockNo = newOrder.getSymbol().getValue();
-        String direction = (newOrder.getSide().getValue() == BUY)? "B": "S";
-        String orderType = (newOrder.getOrdType().getValue() == MARKET)? "M": "L";
+        Action action = (newOrder.getSide().getValue() == BUY)? Action.BUY : Action.SELL;
+        OrderType orderType = (newOrder.getOrdType().getValue() == MARKET)? OrderType.MARKET: OrderType.LIMIT;
         double quantity = newOrder.getOrderQty().getValue();
         double price = newOrder.getPrice().getValue();
 
-
         log.debug("Stock Code: {}", stockNo);
-        log.debug("Buy or Sell: {}", direction);
+        log.debug("Buy or Sell: {}", action);
         log.debug("Quantity: {}", quantity);
         log.debug("Price: {}", price);
 
         try {
             // Send an Execution Report (8) to acknowledge the order
             sendExecutionReport(sessionID, clientOrdID, newOrder, new ExecType(ExecType.NEW), new OrdStatus(OrdStatus.NEW));
-            orderQueue.put(new Order(stockNo, brokerID, clientOrdID, orderType, direction,
-                    price, (int)quantity, ZonedDateTime.now(), ZonedDateTime.now()));
-            log.debug("Put the {} order of {} to the order queue", direction, stockNo);
+            orderQueue.put(OrderManager.requestOrder(stockNo, brokerID, clientOrdID, orderType, action,
+                    price, (int)quantity));
+            log.debug("Put the {} order of {} to the order queue", action, stockNo);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -89,12 +90,12 @@ public class FIXTradeServerApp extends MessageCracker implements Application, Ru
     }
 
     /**
-     * Sends an execution report based on the provided parameters.
+     * Sends an execution report based on the provIDed parameters.
      *
      * @param sessionID the session ID to which the report will be sent
      * @param clientOrdID the client order ID
      * @param stockNo the stock number
-     * @param side the side (buy or sell) of the order
+     * @param side the Side (buy or sell) of the order
      * @param execType the execution type
      * @param ordStatus the order status
      * @param filledQty the quantity filled

@@ -1,13 +1,12 @@
 package equity.externalparties;
 
 import equity.fix.server.FIXTradeServerApp;
-import equity.vo.Trade;
+import equity.objectpooling.Trade;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import quickfix.field.ExecType;
 import quickfix.field.OrdStatus;
 import quickfix.field.Side;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;

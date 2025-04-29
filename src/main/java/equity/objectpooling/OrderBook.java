@@ -1,4 +1,4 @@
-package equity.vo;
+package equity.objectpooling;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -125,7 +125,7 @@ public class OrderBook {
         log.debug("the last price: {}", orderMap.lastKey());
         for (Entry<Double, LinkedList<Order>> entry : orderMap.entrySet()) {
             log.debug("Orders of {} at price level {} ", stockNo, entry.getKey());
-            entry.getValue().forEach(a -> log.debug("Broker ID {} Client Brk ID {} Qty {} ", a.getBrokerId(), a.getClientOrdID(), a.getQuantity()));
+            entry.getValue().forEach(a -> log.debug("Broker ID {} Client Brk ID {} Qty {} ", a.getBrokerID(), a.getClientOrdID(), a.getQuantity()));
             log.debug("The time of head is {}", Objects.requireNonNull(entry.getValue().peek()).getCreatedDateTime());
         }
         readWriteLock.readLock().unlock();

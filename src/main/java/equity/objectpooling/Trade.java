@@ -1,4 +1,4 @@
-package equity.vo;
+package equity.objectpooling;
 
 public record Trade(String buyBrokerID, String sellBrokerID, String buyOrderID, String sellOrderID,
 					String stockNo, Double executedPrice, int executedQty, String executionDateTime) {
