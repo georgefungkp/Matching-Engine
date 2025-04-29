@@ -197,7 +197,6 @@ public class TestMarketOrderMatching {
 
 		// Fulfill remaining sell orders
 		orderMatching.matchTopOrder();
-		MarketData marketData3 = marketDataQueue.poll();
 		orderMatching.matchTopOrder();
 		MarketData marketData2 = marketDataQueue.poll();
 		assertNotNull(marketData2);
