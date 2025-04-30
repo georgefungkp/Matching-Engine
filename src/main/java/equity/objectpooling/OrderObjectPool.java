@@ -40,13 +40,14 @@ public class OrderObjectPool {
         Order newOrder;
         if (freeOrderList.isEmpty()){
             newOrder = new Order(stockNo, brokerID, clientOrdID, orderType, direction, price, quantity);
-            inUsedOrderList.add(newOrder);
         }else{
             Iterator<Order> iterator = freeOrderList.iterator();
             newOrder = iterator.next();
             newOrder.updateForReuse(brokerID, clientOrdID, orderType, direction, price, quantity);
+            freeOrderList.remove(newOrder);
 //            iterator.remove();
         }
+        inUsedOrderList.add(newOrder);
         orderMap.put(sequenceGenerator.getNextSequence(), newOrder);
         return newOrder;
     }

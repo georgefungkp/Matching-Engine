@@ -4,6 +4,7 @@ import equity.objectpooling.Order;
 import equity.objectpooling.OrderBook;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.LinkedList;
 import java.util.Map;
@@ -40,7 +41,7 @@ public class OrderProcessingJob implements Runnable {
      *
      * @param order the order to be placed into the order book
      */
-    public void putOrder(Order order) {
+    public void putOrder(@NotNull Order order) {
         TreeMap<Double, LinkedList<Order>> orderMap;
         ReentrantReadWriteLock readWriteLock;
         OrderBook orderBook = orderBooks.get(order.getStockNo());

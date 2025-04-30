@@ -11,7 +11,6 @@ import org.mockito.Mock;
 import org.mockito.Spy;
 
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -19,7 +18,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class TestMarketOrderMatching {
-    private static final ConcurrentHashMap<String, Order> orderObjMapper = new ConcurrentHashMap<>();
     @Mock
     private final LinkedBlockingQueue<Order> orderQueue = new LinkedBlockingQueue<>();
 	@Spy
@@ -34,40 +32,30 @@ public class TestMarketOrderMatching {
 
     @BeforeEach
 	protected void setUp() {
-        orderProcessingJob = new OrderProcessingJob(orderQueue, orderBooks, orderObjMapper);
+		ConcurrentHashMap<String, Order> orderObjMapper = new ConcurrentHashMap<>();
 		for (int i=1; i<=noOfStocks; i++ ) {
 			orderBooks.put(String.format("%05d", i), new OrderBook(String.format("%05d", i), "Stock " + 1));
 		}
+        orderProcessingJob = new OrderProcessingJob(orderQueue, orderBooks, orderObjMapper);
 		OrderBook orderBook = orderBooks.get("00001");
         orderMatching = new LimitOrderMatchingJob(orderBook, orderObjMapper, marketDataQueue, tradeDataQueue);
-		Order bidOrder1 = RandomOrderRequestGenerator.getNewLimitOrder("00001", "Broker 1",
+		Order bidLimitedOrder = RandomOrderRequestGenerator.getNewLimitOrder("00001", "Broker 1",
 				"001", "B", 8.1, 300);
-        orderObjMapper.put(bidOrder1.getBrokerID() + "-" + bidOrder1.getClientOrdID(), bidOrder1);
-		LinkedList<Order> orderList1 = new LinkedList<>();
-		orderList1.add(bidOrder1);
-		orderBook.getBidMap().put(bidOrder1.getPrice(), orderList1);
+        orderProcessingJob.putOrder(bidLimitedOrder);
 
-		Order askOrder1 = RandomOrderRequestGenerator.getNewLimitOrder("00001", "Broker 2",
+		Order askLimitedOrder1 = RandomOrderRequestGenerator.getNewLimitOrder("00001", "Broker 2",
 				"002", "S", 8.2, 100);
-        orderObjMapper.put(askOrder1.getBrokerID() + "-" + askOrder1.getClientOrdID(), askOrder1);
-		LinkedList<Order> askOrderList1 = new LinkedList<>();
-		askOrderList1.add(askOrder1);
-		orderBook.getAskMap().put(askOrder1.getPrice(), askOrderList1);
+        orderProcessingJob.putOrder(askLimitedOrder1);
 
-		Order askOrder2 = RandomOrderRequestGenerator.getNewLimitOrder("00001", "Broker 2",
+		Order askLimitedOrder2 = RandomOrderRequestGenerator.getNewLimitOrder("00001", "Broker 2",
 				"003", "S", 8.4, 300);
-        orderObjMapper.put(askOrder2.getBrokerID() + "-" + askOrder2.getClientOrdID(), askOrder2);
-		LinkedList<Order> askOrderList2 = new LinkedList<>();
-		askOrderList2.add(askOrder2);
-		orderBook.getAskMap().put(askOrder2.getPrice(), askOrderList2);
+        orderProcessingJob.putOrder(askLimitedOrder2);
 
-		Order askOrder3 = RandomOrderRequestGenerator.getNewLimitOrder("00001", "Broker 2",
+		Order askLimitedOrder3 = RandomOrderRequestGenerator.getNewLimitOrder("00001", "Broker 2",
 				"004", "S", 8.5, 400);
-        orderObjMapper.put(askOrder3.getBrokerID() + "-" + askOrder3.getClientOrdID(), askOrder3);
+        orderObjMapper.put(askLimitedOrder3.getBrokerID() + "-" + askLimitedOrder3.getClientOrdID(), askLimitedOrder3);
+        orderProcessingJob.putOrder(askLimitedOrder3);
 
-		LinkedList<Order> orderList3 = new LinkedList<>();
-		orderList3.add(askOrder3);
-		orderBook.getAskMap().put(askOrder3.getPrice(), orderList3);
 		assertEquals(0, OrderManager.getFreeOrderCount("00001"));
 		assertEquals(4, OrderManager.getUsedOrderCount("00001"));
 	}
@@ -78,7 +66,6 @@ public class TestMarketOrderMatching {
 	 */
 	@AfterEach
 	public void tearDown(){
-		orderObjMapper.clear();
 		marketDataQueue.clear();
         tradeDataQueue.clear();
 		OrderManager.clearOrderObjects("00001");
@@ -97,7 +84,6 @@ public class TestMarketOrderMatching {
     public void testMarketBidOrder() throws InterruptedException {
 		Order newMarketBIDOrder = RandomOrderRequestGenerator.getNewMarketOrder("00001", "Broker 3",
 				"001", "B",  100);
-		orderObjMapper.put(newMarketBIDOrder.getBrokerID() + "-" + newMarketBIDOrder.getClientOrdID(), newMarketBIDOrder);
 		orderProcessingJob.putOrder(newMarketBIDOrder);
 		assertEquals(8.5, orderBooks.get("00001").getBestBid());
         orderMatching.matchTopOrder();
@@ -123,7 +109,6 @@ public class TestMarketOrderMatching {
 	public void testMarketBidOrder2() throws InterruptedException {
 		Order newMarketBIDOrder = RandomOrderRequestGenerator.getNewMarketOrder("00001", "Broker 3",
 				"001", "B", 400);
-		orderObjMapper.put(newMarketBIDOrder.getBrokerID() + "-" + newMarketBIDOrder.getClientOrdID(), newMarketBIDOrder);
 		orderProcessingJob.putOrder(newMarketBIDOrder);
         orderMatching.matchTopOrder();
 		marketDataQueue.poll();
@@ -164,7 +149,6 @@ public class TestMarketOrderMatching {
     public void testMarketBidOrder3() throws InterruptedException {
 		Order newMarketBIDOrder = RandomOrderRequestGenerator.getNewMarketOrder("00001", "Broker 3",
 				"001", "B",  100);
-		orderObjMapper.put(newMarketBIDOrder.getBrokerID() + "-" + newMarketBIDOrder.getClientOrdID(), newMarketBIDOrder);
 		orderProcessingJob.putOrder(newMarketBIDOrder);
 		assertEquals(8.5, orderBooks.get("00001").getBestBid());
 
@@ -189,7 +173,6 @@ public class TestMarketOrderMatching {
 		// Re-use order object
 		Order newMarketBIDOrder2 = RandomOrderRequestGenerator.getNewMarketOrder("00001", "Broker 3",
 				"001", "B",  700);
-		orderObjMapper.put(newMarketBIDOrder2.getBrokerID() + "-" + newMarketBIDOrder2.getClientOrdID(), newMarketBIDOrder2);
 		orderProcessingJob.putOrder(newMarketBIDOrder2);
 		assertEquals(8.5, orderBooks.get("00001").getBestBid());
 		assertEquals(2, OrderManager.getFreeOrderCount("00001"));
@@ -200,9 +183,9 @@ public class TestMarketOrderMatching {
 		orderMatching.matchTopOrder();
 		MarketData marketData2 = marketDataQueue.poll();
 		assertNotNull(marketData2);
-        assertEquals(8.1, marketData2.bestBid());
-		assertNull(marketData2.bestAsk());
-		assertEquals(8.5, marketData2.lastTradePrice());
+        assertEquals(8.5, marketData2.bestBid());
+        assertEquals(8.5, marketData2.bestAsk());
+		assertEquals(8.4, marketData2.lastTradePrice());
 
 		Trade trade2 = tradeDataQueue.poll();
 		assertNotNull(trade2);
@@ -211,6 +194,12 @@ public class TestMarketOrderMatching {
 		assertEquals("Broker 2", trade2.sellBrokerID());
 		assertEquals(8.4, trade2.executedPrice());
 		assertEquals(300, trade2.executedQty());
+
+		MarketData marketData3 = marketDataQueue.poll();
+		assertNotNull(marketData3);
+        assertEquals(8.1, marketData3.bestBid());
+		assertNull(marketData3.bestAsk());
+		assertEquals(8.5, marketData3.lastTradePrice());
 
 		Trade trade3 = tradeDataQueue.poll();
 		assertNotNull(trade3);
@@ -229,7 +218,6 @@ public class TestMarketOrderMatching {
     public void testMarketSellOrder() throws InterruptedException {
 		Order newMarketSellOrder = RandomOrderRequestGenerator.getNewMarketOrder("00001", "Broker 4",
 				"001", "S", 400);
-		orderObjMapper.put(newMarketSellOrder.getBrokerID() + "-" + newMarketSellOrder.getClientOrdID(), newMarketSellOrder);
 		orderProcessingJob.putOrder(newMarketSellOrder);
 		assertEquals(8.1, orderBooks.get("00001").getBestAsk());
         orderMatching.matchTopOrder();
