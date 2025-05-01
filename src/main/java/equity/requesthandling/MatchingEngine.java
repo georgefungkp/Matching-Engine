@@ -10,6 +10,7 @@ import equity.orderprocessing.LimitOrderMatchingJob;
 import equity.orderprocessing.OrderProcessingJob;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import util.FileChannelService;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -37,7 +38,7 @@ public class MatchingEngine extends Thread {
     private final int noOfStock;
     private static final HashMap<String, OrderBook> orderBooks = new HashMap<>();
     private static final ConcurrentHashMap<String, Order> orderObjMapper = new ConcurrentHashMap<>();
-
+    private static final FileChannelService fileChannelService = new FileChannelService();
 
     private boolean listening = true;
 
@@ -73,8 +74,8 @@ public class MatchingEngine extends Thread {
     public void startProcessingJobs() {
         startOrderMatchingJobs();
         new Thread(new OrderProcessingJob(orderQueue, orderBooks, orderObjMapper)).start();
-        new Thread(new MarketDataJob(marketDataQueue)).start();
-        new Thread(new ResultingTradeJob(resultingTradeQueue, this.fixTradeServerApp)).start();
+        new Thread(new MarketDataJob(marketDataQueue,fileChannelService)).start();
+        new Thread(new ResultingTradeJob(resultingTradeQueue, this.fixTradeServerApp, fileChannelService)).start();
     }
 
 

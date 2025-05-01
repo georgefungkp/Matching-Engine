@@ -1,29 +1,47 @@
 package com.baml.equity.orderprocessing;
 
 import equity.client.RandomOrderRequestGenerator;
+import equity.externalparties.ResultingTradeJob;
+import equity.fix.server.FIXTradeServerApp;
 import equity.objectpooling.*;
 import equity.orderprocessing.LimitOrderMatchingJob;
 import equity.orderprocessing.OrderProcessingJob;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Spy;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import util.FileChannelService;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
+//@ExtendWith(MockitoExtension.class)
 public class TestObjectPool {
     private static final ConcurrentHashMap<String, Order> orderObjMapper = new ConcurrentHashMap<>();
-    @Spy
     private final LinkedBlockingQueue<Order> orderQueue = new LinkedBlockingQueue<>();
-	@Spy
-	private LinkedBlockingQueue<MarketData> marketDataQueue = new LinkedBlockingQueue<>();
-	@Spy
-	private LinkedBlockingQueue<Trade>	tradeDataQueue = new LinkedBlockingQueue<>();
+	private final LinkedBlockingQueue<MarketData> marketDataQueue = new LinkedBlockingQueue<>();
+	private final LinkedBlockingQueue<Trade> tradeDataQueue = new LinkedBlockingQueue<>();
+	@Mock
+	private FIXTradeServerApp fixTradeServerApp;
+	@Mock
+	FileChannelService fileChannelService;
+
+
+//	@Spy
+	@InjectMocks
+//	private ResultingTradeJob resultingTradeJob = new ResultingTradeJob(tradeDataQueue,fixTradeServerApp,fileChannelService);
+	private ResultingTradeJob resultingTradeJob;
 
     OrderProcessingJob orderProcessingJob;
     LimitOrderMatchingJob orderMatching;
@@ -32,6 +50,8 @@ public class TestObjectPool {
 
     @BeforeEach
 	protected void setUp() {
+		MockitoAnnotations.openMocks(this);
+		resultingTradeJob = Mockito.spy(new ResultingTradeJob(tradeDataQueue,fixTradeServerApp,fileChannelService));
 		for (int i=1; i<=noOfStocks; i++ ) {
 			orderBooks.put(String.format("%05d", i), new OrderBook(String.format("%05d", i), "Stock " + 1));
 		}
@@ -80,7 +100,7 @@ public class TestObjectPool {
 		// stock 00002
 		Order askOrder2 = RandomOrderRequestGenerator.getNewLimitOrder("00002", "Broker 2",
 				"001", "S", 8.0, 100);
-		assertEquals(1, OrderManager.getFreeOrderCount("00001"));
+        orderProcessingJob.putOrder(askOrder2);
 		assertEquals(1, OrderManager.getUsedOrderCount("00001"));
 		assertEquals(0, OrderManager.getFreeOrderCount("00002"));
 		assertEquals(1, OrderManager.getUsedOrderCount("00002"));
@@ -91,11 +111,32 @@ public class TestObjectPool {
     }
 
 	@Test
-  	public void testReUseTradeObject() throws InterruptedException {
+  	public void testReUseTradeObject() throws InterruptedException, IOException {
+		doNothing().when(fileChannelService).writeTradeToFile(any(Trade.class), any(Path.class));
 		orderMatching.matchTopOrder();
 		assertEquals(0, OrderManager.getFreeTradeCount("00001"));
 		assertEquals(1, OrderManager.getUsedTradeCount("00001"));
+		Trade testTrade = tradeDataQueue.take();
+		verify(fileChannelService, never()).writeTradeToFile(any(), any());
+		resultingTradeJob.processTradeData(testTrade);
+		verify(fileChannelService, times(1)).writeTradeToFile(eq(testTrade), any(Path.class));
+		assertEquals(1, OrderManager.getFreeTradeCount("00001"));
+		assertEquals(0, OrderManager.getUsedTradeCount("00001"));
 
+		// 2nd trade
+		OrderBook orderBook = orderBooks.get("00001");
+        orderMatching = new LimitOrderMatchingJob(orderBook, orderObjMapper, marketDataQueue, tradeDataQueue);
+		Order bidOrder1 = RandomOrderRequestGenerator.getNewLimitOrder("00001", "Broker 1",
+				"001", "B", 8.3, 300);
+        orderProcessingJob.putOrder(bidOrder1);
 
+		Order askOrder1 = RandomOrderRequestGenerator.getNewLimitOrder("00001", "Broker 2",
+				"002", "S", 8.3, 300);
+        orderProcessingJob.putOrder(askOrder1);
+		orderMatching.matchTopOrder();
+		Trade testTrade2 = tradeDataQueue.take();
+		resultingTradeJob.processTradeData(testTrade2);
+		assertEquals(1, OrderManager.getFreeTradeCount("00001"));
+		assertEquals(0, OrderManager.getUsedTradeCount("00001"));
 	}
 }
