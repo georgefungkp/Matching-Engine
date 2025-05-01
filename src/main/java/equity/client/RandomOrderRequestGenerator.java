@@ -36,7 +36,7 @@ public class RandomOrderRequestGenerator {
 			qty = randomSeed.nextInt(1,9) * 10;
 		OrderType orderType = OrderType.LIMIT;
 
-		return OrderManager.requestOrder(stockNo, brokerID, clientOrdID, orderType, action, price, qty);
+		return OrderManager.requestOrderObj(stockNo, brokerID, clientOrdID, orderType, action, price, qty);
 	}
 
 	public static Order getNewMarketOrder(String stockNo, String brokerID, String clientOrdID, String direction, Integer qty) {
@@ -55,7 +55,7 @@ public class RandomOrderRequestGenerator {
 			qty = randomSeed.nextInt(1000);
 		OrderType orderType = OrderType.MARKET;
 
-		return OrderManager.requestOrder(stockNo, brokerID, clientOrdID, orderType, action, null, qty);
+		return OrderManager.requestOrderObj(stockNo, brokerID, clientOrdID, orderType, action, null, qty);
 	}
 
 }

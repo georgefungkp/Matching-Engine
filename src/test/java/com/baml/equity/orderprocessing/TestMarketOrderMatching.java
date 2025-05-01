@@ -58,6 +58,8 @@ public class TestMarketOrderMatching {
 
 		assertEquals(0, OrderManager.getFreeOrderCount("00001"));
 		assertEquals(4, OrderManager.getUsedOrderCount("00001"));
+		assertEquals(0, OrderManager.getFreeTradeCount("00001"));
+		assertEquals(0, OrderManager.getUsedTradeCount("00001"));
 	}
 
 
@@ -68,8 +70,8 @@ public class TestMarketOrderMatching {
 	public void tearDown(){
 		marketDataQueue.clear();
         tradeDataQueue.clear();
-		OrderManager.clearOrderObjects("00001");
-		OrderManager.clearOrderObjects("00002");
+		OrderManager.clearObjects("00001");
+		OrderManager.clearObjects("00002");
 	}
 
 
@@ -95,14 +97,16 @@ public class TestMarketOrderMatching {
 
 		Trade trade = tradeDataQueue.poll();
 		assertNotNull(trade);
-		assertEquals("00001", trade.stockNo());
-		assertEquals("Broker 3", trade.buyBrokerID());
-		assertEquals("Broker 2", trade.sellBrokerID());
-		assertEquals(8.2, trade.executedPrice());
-		assertEquals(100, trade.executedQty());
+		assertEquals("00001", trade.getStockNo());
+		assertEquals("Broker 3", trade.getBuyBrokerID());
+		assertEquals("Broker 2", trade.getSellBrokerID());
+		assertEquals(8.2, trade.getExecutedPrice());
+		assertEquals(100, trade.getExecutedQty());
 
 		assertEquals(2, OrderManager.getFreeOrderCount("00001"));
 		assertEquals(3, OrderManager.getUsedOrderCount("00001"));
+		assertEquals(0, OrderManager.getFreeTradeCount("00001"));
+		assertEquals(1, OrderManager.getUsedTradeCount("00001"));
     }
 
 	@Test
@@ -122,11 +126,11 @@ public class TestMarketOrderMatching {
 
 		Trade trade = tradeDataQueue.poll();
 		assertNotNull(trade);
-		assertEquals("00001", trade.stockNo());
-		assertEquals("Broker 3", trade.buyBrokerID());
-		assertEquals("003", trade.sellOrderID());
-		assertEquals(8.4, trade.executedPrice());
-		assertEquals(300, trade.executedQty());
+		assertEquals("00001", trade.getStockNo());
+		assertEquals("Broker 3", trade.getBuyBrokerID());
+		assertEquals("003", trade.getSellOrderID());
+		assertEquals(8.4, trade.getExecutedPrice());
+		assertEquals(300, trade.getExecutedQty());
 
         orderMatching.matchTopOrder();
 		Trade trade2 = tradeDataQueue.poll();
@@ -161,11 +165,11 @@ public class TestMarketOrderMatching {
 
 		Trade trade = tradeDataQueue.poll();
 		assertNotNull(trade);
-		assertEquals("00001", trade.stockNo());
-		assertEquals("Broker 3", trade.buyBrokerID());
-		assertEquals("Broker 2", trade.sellBrokerID());
-		assertEquals(8.2, trade.executedPrice());
-		assertEquals(100, trade.executedQty());
+		assertEquals("00001", trade.getStockNo());
+		assertEquals("Broker 3", trade.getBuyBrokerID());
+		assertEquals("Broker 2", trade.getSellBrokerID());
+		assertEquals(8.2, trade.getExecutedPrice());
+		assertEquals(100, trade.getExecutedQty());
 
 		assertEquals(2, OrderManager.getFreeOrderCount("00001"));
 		assertEquals(3, OrderManager.getUsedOrderCount("00001"));
@@ -175,8 +179,8 @@ public class TestMarketOrderMatching {
 				"001", "B",  700);
 		orderProcessingJob.putOrder(newMarketBIDOrder2);
 		assertEquals(8.5, orderBooks.get("00001").getBestBid());
-		assertEquals(2, OrderManager.getFreeOrderCount("00001"));
-		assertEquals(3, OrderManager.getUsedOrderCount("00001"));
+		assertEquals(1, OrderManager.getFreeOrderCount("00001"));
+		assertEquals(4, OrderManager.getUsedOrderCount("00001"));
 
 		// Fulfill remaining sell orders
 		orderMatching.matchTopOrder();
@@ -189,11 +193,11 @@ public class TestMarketOrderMatching {
 
 		Trade trade2 = tradeDataQueue.poll();
 		assertNotNull(trade2);
-		assertEquals("00001", trade2.stockNo());
-		assertEquals("Broker 3", trade2.buyBrokerID());
-		assertEquals("Broker 2", trade2.sellBrokerID());
-		assertEquals(8.4, trade2.executedPrice());
-		assertEquals(300, trade2.executedQty());
+		assertEquals("00001", trade2.getStockNo());
+		assertEquals("Broker 3", trade2.getBuyBrokerID());
+		assertEquals("Broker 2", trade2.getSellBrokerID());
+		assertEquals(8.4, trade2.getExecutedPrice());
+		assertEquals(300, trade2.getExecutedQty());
 
 		MarketData marketData3 = marketDataQueue.poll();
 		assertNotNull(marketData3);
@@ -203,14 +207,17 @@ public class TestMarketOrderMatching {
 
 		Trade trade3 = tradeDataQueue.poll();
 		assertNotNull(trade3);
-		assertEquals("00001", trade3.stockNo());
-		assertEquals("Broker 3", trade3.buyBrokerID());
-		assertEquals("Broker 2", trade3.sellBrokerID());
-		assertEquals(8.5, trade3.executedPrice());
-		assertEquals(400, trade3.executedQty());
+		assertEquals("00001", trade3.getStockNo());
+		assertEquals("Broker 3", trade3.getBuyBrokerID());
+		assertEquals("Broker 2", trade3.getSellBrokerID());
+		assertEquals(8.5, trade3.getExecutedPrice());
+		assertEquals(400, trade3.getExecutedQty());
 
 		assertEquals(4, OrderManager.getFreeOrderCount("00001"));
 		assertEquals(1, OrderManager.getUsedOrderCount("00001"));
+		assertEquals(0, OrderManager.getFreeTradeCount("00001"));
+		assertEquals(3, OrderManager.getUsedTradeCount("00001"));
+
 
     }
 
@@ -229,11 +236,11 @@ public class TestMarketOrderMatching {
 
 		Trade trade = tradeDataQueue.poll();
 		assertNotNull(trade);
-		assertEquals("00001", trade.stockNo());
-		assertEquals("Broker 1", trade.buyBrokerID());
-		assertEquals("Broker 4", trade.sellBrokerID());
-		assertEquals(8.1, trade.executedPrice());
-		assertEquals(300, trade.executedQty());
+		assertEquals("00001", trade.getStockNo());
+		assertEquals("Broker 1", trade.getBuyBrokerID());
+		assertEquals("Broker 4", trade.getSellBrokerID());
+		assertEquals(8.1, trade.getExecutedPrice());
+		assertEquals(300, trade.getExecutedQty());
 
 		assertEquals(1, OrderManager.getFreeOrderCount("00001"));
 		assertEquals(4, OrderManager.getUsedOrderCount("00001"));

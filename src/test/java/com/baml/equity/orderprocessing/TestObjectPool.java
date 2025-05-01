@@ -57,15 +57,20 @@ public class TestObjectPool {
 		orderObjMapper.clear();
 		marketDataQueue.clear();
         tradeDataQueue.clear();
-		OrderManager.clearOrderObjects("00001");
-		OrderManager.clearOrderObjects("00002");
+		OrderManager.clearObjects("00001");
+		OrderManager.clearObjects("00002");
 	}
 
     @Test
-    public void testOrderObject() throws InterruptedException {
+    public void testReUseOrderObject() throws InterruptedException {
+		assertEquals(0, OrderManager.getFreeTradeCount("00001"));
+		assertEquals(0, OrderManager.getUsedTradeCount("00001"));
         orderMatching.matchTopOrder();
 		assertEquals(2, OrderManager.getFreeOrderCount("00001"));
 		assertEquals(0, OrderManager.getUsedOrderCount("00001"));
+		assertEquals(0, OrderManager.getFreeTradeCount("00001"));
+		assertEquals(1, OrderManager.getUsedTradeCount("00001"));
+
 		Order askOrder1 = RandomOrderRequestGenerator.getNewLimitOrder("00001", "Broker 2",
 				"001", "S", 8.0, 100);
         orderProcessingJob.putOrder(askOrder1);
@@ -79,7 +84,18 @@ public class TestObjectPool {
 		assertEquals(1, OrderManager.getUsedOrderCount("00001"));
 		assertEquals(0, OrderManager.getFreeOrderCount("00002"));
 		assertEquals(1, OrderManager.getUsedOrderCount("00002"));
+		assertEquals(0, OrderManager.getFreeTradeCount("00001"));
+		assertEquals(1, OrderManager.getUsedTradeCount("00001"));
+		assertEquals(0, OrderManager.getFreeTradeCount("00002"));
+		assertEquals(0, OrderManager.getUsedTradeCount("00002"));
     }
 
+	@Test
+  	public void testReUseTradeObject() throws InterruptedException {
+		orderMatching.matchTopOrder();
+		assertEquals(0, OrderManager.getFreeTradeCount("00001"));
+		assertEquals(1, OrderManager.getUsedTradeCount("00001"));
 
+
+	}
 }

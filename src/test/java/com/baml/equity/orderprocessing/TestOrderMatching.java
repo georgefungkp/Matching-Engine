@@ -75,8 +75,8 @@ public class TestOrderMatching {
 		orderObjMapper.clear();
 		marketDataQueue.clear();
         tradeDataQueue.clear();
-		OrderManager.clearOrderObjects("00001");
-		OrderManager.clearOrderObjects("00002");
+		OrderManager.clearObjects("00001");
+		OrderManager.clearObjects("00002");
 	}
 
 
@@ -99,9 +99,9 @@ public class TestOrderMatching {
 
 		Trade trade = tradeDataQueue.poll();
 		assertNotNull(trade);
-		assertEquals("00001", trade.stockNo());
-		assertEquals(8.2, trade.executedPrice());
-		assertEquals(100, trade.executedQty());
+		assertEquals("00001", trade.getStockNo());
+		assertEquals(8.2, trade.getExecutedPrice());
+		assertEquals(100, trade.getExecutedQty());
 		assertEquals(1, OrderManager.getFreeOrderCount("00001"));
 		assertEquals(4, OrderManager.getUsedOrderCount("00001"));
 
@@ -120,9 +120,9 @@ public class TestOrderMatching {
 
 		Trade trade2 = tradeDataQueue.poll();
 		assertNotNull(trade2);
-		assertEquals("00001", trade.stockNo());
-		assertEquals(8.5, trade2.executedPrice());
-		assertEquals(200, trade2.executedQty());
+		assertEquals("00001", trade.getStockNo());
+		assertEquals(8.5, trade2.getExecutedPrice());
+		assertEquals(200, trade2.getExecutedQty());
 		assertEquals(2, OrderManager.getFreeOrderCount("00001"));
 		assertEquals(3, OrderManager.getUsedOrderCount("00001"));
 
@@ -194,11 +194,11 @@ public class TestOrderMatching {
 		assertEquals(8.2, marketData.lastTradePrice());
 		Trade trade = tradeDataQueue.poll();
 		assertNotNull(trade);
-		assertEquals("00001", trade.stockNo());
-		assertEquals(8.2, trade.executedPrice());
-		assertEquals("Broker 1", trade.buyBrokerID());
-		assertEquals("002", trade.sellOrderID());
-		assertEquals(100, trade.executedQty());
+		assertEquals("00001", trade.getStockNo());
+		assertEquals(8.2, trade.getExecutedPrice());
+		assertEquals("Broker 1", trade.getBuyBrokerID());
+		assertEquals("002", trade.getSellOrderID());
+		assertEquals(100, trade.getExecutedQty());
 
 		orderMatching.matchTopOrder();
 		MarketData marketData2 = marketDataQueue.poll();
@@ -208,11 +208,11 @@ public class TestOrderMatching {
 		assertEquals(8.5, marketData2.lastTradePrice());
 		Trade trade2 = tradeDataQueue.poll();
 		assertNotNull(trade2);
-		assertEquals("00001", trade2.stockNo());
-		assertEquals(8.5, trade2.executedPrice());
-		assertEquals("005", trade.buyOrderID());
-		assertEquals("003", trade2.sellOrderID());
-		assertEquals(300, trade2.executedQty());
+		assertEquals("00001", trade2.getStockNo());
+		assertEquals(8.5, trade2.getExecutedPrice());
+		assertEquals("005", trade.getBuyOrderID());
+		assertEquals("003", trade2.getSellOrderID());
+		assertEquals(300, trade2.getExecutedQty());
 
 		orderMatching.matchTopOrder();
 		MarketData marketData3 = marketDataQueue.poll();
@@ -223,11 +223,11 @@ public class TestOrderMatching {
 		assertEquals(8.5, marketData3.lastTradePrice());
 		Trade trade3 = tradeDataQueue.poll();
 		assertNotNull(trade3);
-		assertEquals("00001", trade3.stockNo());
-		assertEquals(8.5, trade3.executedPrice());
-		assertEquals("005", trade.buyOrderID());
-		assertEquals("004", trade3.sellOrderID());
-		assertEquals(400, trade3.executedQty());
+		assertEquals("00001", trade3.getStockNo());
+		assertEquals(8.5, trade3.getExecutedPrice());
+		assertEquals("005", trade.getBuyOrderID());
+		assertEquals("004", trade3.getSellOrderID());
+		assertEquals(400, trade3.getExecutedQty());
 
 		assertEquals(3, OrderManager.getFreeOrderCount("00001"));
 		assertEquals(3, OrderManager.getUsedOrderCount("00001"));
@@ -262,9 +262,9 @@ public class TestOrderMatching {
 		assertEquals(8.1, marketData.lastTradePrice());
 		Trade trade = tradeDataQueue.poll();
 		assertNotNull(trade);
-		assertEquals("00002", trade.stockNo());
-		assertEquals(8.1, trade.executedPrice());
-		assertEquals(100, trade.executedQty());
+		assertEquals("00002", trade.getStockNo());
+		assertEquals(8.1, trade.getExecutedPrice());
+		assertEquals(100, trade.getExecutedQty());
 		assertTrue(orderBook.getAskMap().isEmpty());
 		assertTrue(orderBook.getBidMap().isEmpty());
 

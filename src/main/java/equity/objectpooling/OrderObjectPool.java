@@ -8,14 +8,16 @@ import org.apache.logging.log4j.Logger;
 import util.SequenceGenerator;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
 
 
 public class OrderObjectPool {
     private static final Logger log = LogManager.getLogger(MatchingEngine.class);
     private final Map<Integer, Order> orderMap = new HashMap<>();
     // or ConcurrentHashMap.newKeySet()
-    private final Set<Order> inUsedOrderList = new HashSet<>();
-    private final Set<Order> freeOrderList = new HashSet<>();
+    private final Set<Order> inUsedOrderList = ConcurrentHashMap.newKeySet();
+    private final Set<Order> freeOrderList = ConcurrentHashMap.newKeySet();
     private final String stockNo;
     private final SequenceGenerator sequenceGenerator = new SequenceGenerator();
 
@@ -45,7 +47,6 @@ public class OrderObjectPool {
             newOrder = iterator.next();
             newOrder.updateForReuse(brokerID, clientOrdID, orderType, direction, price, quantity);
             freeOrderList.remove(newOrder);
-//            iterator.remove();
         }
         inUsedOrderList.add(newOrder);
         orderMap.put(sequenceGenerator.getNextSequence(), newOrder);
@@ -58,7 +59,7 @@ public class OrderObjectPool {
      *
      * @param order the Order object to be returned to the free order list
      */
-    public synchronized void returnOrder(Order order){
+    public synchronized void returnOrderObj(Order order){
         if (order != null){
             if (!inUsedOrderList.remove(order))
                 log.error("{} is not in use. Need to check ", order.toString());
@@ -66,11 +67,11 @@ public class OrderObjectPool {
         }
     }
 
-    public synchronized int getFreeOrdersCount() {
+    public int getFreeOrderCount() {
         return freeOrderList.size();
     }
 
-    public synchronized int getUsedOrdersCount(){
+    public int getUsedOrderCount(){
         return inUsedOrderList.size();
     }
 
