@@ -41,8 +41,8 @@ public class MarketDataJob implements Runnable {
                 Path path = Paths.get(dotenv.get("marketData") + data.stockNo() + "_"
                         + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + ".txt");
                 Files.deleteIfExists(path);
-                fileChannelService.writeMarketDataToFile(data, path);
-
+                if (fileChannelService.writeMarketDataToFile(data, path) ==0)
+                    log.error("Cannot write log to {}", path);
             } catch (InterruptedException | IOException e) {
                 log.error(e);
                 listening = false;

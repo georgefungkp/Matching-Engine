@@ -20,7 +20,7 @@ import java.util.TreeMap;
 public class FileChannelService {
     private static final Logger log = LogManager.getLogger(MarketDataJob.class);
 
-    public void writeTradeToFile(Trade tradeData, Path path) throws IOException {
+    public int writeTradeToFile(Trade tradeData, Path path) throws IOException {
         // Stock No, Bid Broker Id, Bid Order id, Sell Broker Id, Sell order id, Executed Price, Qty, Executed Time\
         String message = String.format("%s,%s,%s,%s,%s,%s %s %s\r\n",
                 tradeData.getStockNo(),
@@ -31,18 +31,17 @@ public class FileChannelService {
                 tradeData.getExecutedPrice(),
                 tradeData.getExecutedQty(),
                 tradeData.getExecutionDateTime());
-
         FileLock lock;
+        int noOfBytes;
         try (FileChannel fileChannel = FileChannel.open(path, StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
             lock = fileChannel.lock();
-            if (fileChannel.write(ByteBuffer.wrap(message.getBytes())) == 0) {
-                log.error("Cannot write log to {}", path);
-            }
+            noOfBytes = fileChannel.write(ByteBuffer.wrap(message.getBytes()));
             lock.release();
         }
+        return noOfBytes;
     }
 
-    public void writeMarketDataToFile(MarketData data, Path path) throws IOException {
+    public int writeMarketDataToFile(MarketData data, Path path) throws IOException {
         String bestBidTxt = (data.bestBid() == null) ? "" : data.bestBid().toString();
         String bestAskTxt = (data.bestAsk() == null) ? "" : data.bestAsk().toString();
         String lastTradePrice = (data.lastTradePrice() == null) ? "" : data.lastTradePrice().toString();
@@ -54,13 +53,13 @@ public class FileChannelService {
                 + "Ask orders\n" + orderBookToTxt(data.askMap());
 
         FileLock lock;
+        int noOfBytes;
         try (FileChannel fileChannel = FileChannel.open(path, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
             lock = fileChannel.lock();
-            if (fileChannel.write(ByteBuffer.wrap(message.getBytes())) == 0)
-                log.error("Cannot write log to {}", path);
+            noOfBytes = fileChannel.write(ByteBuffer.wrap(message.getBytes()));
             lock.release(); // manually release the lock
         }
-
+        return noOfBytes;
     }
 
     public StringBuilder orderBookToTxt(TreeMap<Double, LinkedList<Order>> orderBook) {

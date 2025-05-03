@@ -33,11 +33,17 @@ public class ResultingTradeJob implements Runnable {
     }
 
 
-    public void processTradeData(Trade tradeData) throws InterruptedException, IOException {
+    public void processTradeData(Trade tradeData) throws InterruptedException,IOException{
 
         Path path = Paths.get(dotenv.get("tradeData") + tradeData.getStockNo() + "_"
                 + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + ".csv");
-        fileChannelService.writeTradeToFile(tradeData, path);
+        try {
+            if (fileChannelService.writeTradeToFile(tradeData, path) == 0)
+                log.error("Cannot write log to {}", path);
+        }catch (Exception e){
+            e.printStackTrace();
+            log.error(e);
+        }
 
         // Send FIX message if applicable
         if (fixTradeServer.getSessionID() != null) {

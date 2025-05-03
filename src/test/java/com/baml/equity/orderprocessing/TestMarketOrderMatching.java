@@ -58,8 +58,8 @@ public class TestMarketOrderMatching {
 
 		assertEquals(0, OrderManager.getFreeOrderCount("00001"));
 		assertEquals(4, OrderManager.getUsedOrderCount("00001"));
-		assertEquals(0, OrderManager.getFreeTradeCount("00001"));
-		assertEquals(0, OrderManager.getUsedTradeCount("00001"));
+		assertEquals(0, OrderManager.getFreeTradeCount("00002"));
+		assertEquals(0, OrderManager.getUsedTradeCount("00002"));
 	}
 
 

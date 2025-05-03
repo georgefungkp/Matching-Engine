@@ -11,11 +11,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import util.FileChannelService;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,7 +24,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-//@ExtendWith(MockitoExtension.class)
 public class TestObjectPool {
     private static final ConcurrentHashMap<String, Order> orderObjMapper = new ConcurrentHashMap<>();
     private final LinkedBlockingQueue<Order> orderQueue = new LinkedBlockingQueue<>();
@@ -38,9 +35,7 @@ public class TestObjectPool {
 	FileChannelService fileChannelService;
 
 
-//	@Spy
 	@InjectMocks
-//	private ResultingTradeJob resultingTradeJob = new ResultingTradeJob(tradeDataQueue,fixTradeServerApp,fileChannelService);
 	private ResultingTradeJob resultingTradeJob;
 
     OrderProcessingJob orderProcessingJob;
@@ -51,7 +46,6 @@ public class TestObjectPool {
     @BeforeEach
 	protected void setUp() {
 		MockitoAnnotations.openMocks(this);
-		resultingTradeJob = Mockito.spy(new ResultingTradeJob(tradeDataQueue,fixTradeServerApp,fileChannelService));
 		for (int i=1; i<=noOfStocks; i++ ) {
 			orderBooks.put(String.format("%05d", i), new OrderBook(String.format("%05d", i), "Stock " + 1));
 		}
@@ -107,8 +101,8 @@ public class TestObjectPool {
     }
 
 	@Test
-  	public void testReUseTradeObject() throws InterruptedException, IOException {
-		doNothing().when(fileChannelService).writeTradeToFile(any(Trade.class), any(Path.class));
+  	public void testReUseTradeObject() throws Exception {
+		doReturn(100).when(fileChannelService).writeTradeToFile(any(Trade.class), any(Path.class));
 		orderMatching.matchTopOrder();
 		assertEquals(0, OrderManager.getFreeTradeCount("00001"));
 		assertEquals(1, OrderManager.getUsedTradeCount("00001"));
