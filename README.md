@@ -19,6 +19,7 @@ This project implements a Matching Engine, a key component in trading platforms 
  - Efficient order handling and order book maintenance
  - Supports **limit** as well as **market** orders
  - Real-time matching logic
+ - After order matching, trade and market data are sent to Client. 
  - Extensible and maintainable code
  - Supports internal message format as well as FIX message format
 
