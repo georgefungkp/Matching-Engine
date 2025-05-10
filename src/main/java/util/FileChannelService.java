@@ -13,9 +13,9 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.AbstractMap;
 import java.util.LinkedList;
 import java.util.Map.Entry;
-import java.util.TreeMap;
 
 public class FileChannelService {
     private static final Logger log = LogManager.getLogger(MarketDataJob.class);
@@ -62,7 +62,7 @@ public class FileChannelService {
         return noOfBytes;
     }
 
-    public StringBuilder orderBookToTxt(TreeMap<Double, LinkedList<Order>> orderBook) {
+    public StringBuilder orderBookToTxt(AbstractMap<Double, LinkedList<Order>> orderBook) {
         StringBuilder message = new StringBuilder();
         for (Entry<Double, LinkedList<Order>> entry : orderBook.entrySet()) {
             for (Order order : entry.getValue()) {

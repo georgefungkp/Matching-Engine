@@ -62,8 +62,8 @@ public class TestOrderMatching {
 				"004", "S", 8.5, 400);
         orderProcessingJob.putOrder(askLimitedOrder2);
         orderProcessingJob.putOrder(askLimitedOrder3);
-		assertEquals(0, OrderManager.getFreeOrderCount("00001"));
-		assertEquals(5, OrderManager.getUsedOrderCount("00001"));
+		assertEquals(0, OrderPoolManager.getFreeOrderCount("00001"));
+		assertEquals(5, OrderPoolManager.getUsedOrderCount("00001"));
 	}
 
 
@@ -75,8 +75,8 @@ public class TestOrderMatching {
 		orderObjMapper.clear();
 		marketDataQueue.clear();
         tradeDataQueue.clear();
-		OrderManager.clearObjects("00001");
-		OrderManager.clearObjects("00002");
+		OrderPoolManager.clearObjects("00001");
+		OrderPoolManager.clearObjects("00002");
 	}
 
 
@@ -102,8 +102,8 @@ public class TestOrderMatching {
 		assertEquals("00001", trade.getStockNo());
 		assertEquals(8.2, trade.getExecutedPrice());
 		assertEquals(100, trade.getExecutedQty());
-		assertEquals(1, OrderManager.getFreeOrderCount("00001"));
-		assertEquals(4, OrderManager.getUsedOrderCount("00001"));
+		assertEquals(1, OrderPoolManager.getFreeOrderCount("00001"));
+		assertEquals(4, OrderPoolManager.getUsedOrderCount("00001"));
 
 		// Second cycle
 		orderMatching.matchTopOrder();
@@ -123,14 +123,14 @@ public class TestOrderMatching {
 		assertEquals("00001", trade.getStockNo());
 		assertEquals(8.5, trade2.getExecutedPrice());
 		assertEquals(200, trade2.getExecutedQty());
-		assertEquals(2, OrderManager.getFreeOrderCount("00001"));
-		assertEquals(3, OrderManager.getUsedOrderCount("00001"));
+		assertEquals(2, OrderPoolManager.getFreeOrderCount("00001"));
+		assertEquals(3, OrderPoolManager.getUsedOrderCount("00001"));
 
 		// Third and subsequent
 		orderMatching.matchTopOrder();
         assertNull(marketDataQueue.poll());
 		assertNull(tradeDataQueue.poll());
-		assertEquals(2, OrderManager.getFreeOrderCount("00001"));
+		assertEquals(2, OrderPoolManager.getFreeOrderCount("00001"));
 	}
 
 	@Test
@@ -229,8 +229,8 @@ public class TestOrderMatching {
 		assertEquals("004", trade3.getSellOrderID());
 		assertEquals(400, trade3.getExecutedQty());
 
-		assertEquals(3, OrderManager.getFreeOrderCount("00001"));
-		assertEquals(3, OrderManager.getUsedOrderCount("00001"));
+		assertEquals(3, OrderPoolManager.getFreeOrderCount("00001"));
+		assertEquals(3, OrderPoolManager.getUsedOrderCount("00001"));
 
 	}
 
@@ -268,8 +268,8 @@ public class TestOrderMatching {
 		assertTrue(orderBook.getAskMap().isEmpty());
 		assertTrue(orderBook.getBidMap().isEmpty());
 
-		assertEquals(2, OrderManager.getFreeOrderCount("00002"));
-		assertEquals(0, OrderManager.getUsedOrderCount("00002"));
-		assertEquals(5, OrderManager.getUsedOrderCount("00001"));
+		assertEquals(2, OrderPoolManager.getFreeOrderCount("00002"));
+		assertEquals(0, OrderPoolManager.getUsedOrderCount("00002"));
+		assertEquals(5, OrderPoolManager.getUsedOrderCount("00001"));
 	}
 }

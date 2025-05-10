@@ -124,7 +124,7 @@ public class MatchingEngine extends Thread {
 //				+ order.getOrderType() + ":" + order.getBuyOrSell() + ":"
 //				+ order.getPrice() + ":" + order.getQuantity();
         String[] tokens = value.split(":");
-        return OrderManager.requestOrderObj(tokens[0], tokens[1], tokens[2], OrderType.getByValue(tokens[3]), Action.getByValue(tokens[4]), Double.valueOf(tokens[5]),
+        return OrderPoolManager.requestOrderObj(tokens[0], tokens[1], tokens[2], OrderType.getByValue(tokens[3]), Action.getByValue(tokens[4]), Double.valueOf(tokens[5]),
                 Integer.parseInt(tokens[6]));
     }
 

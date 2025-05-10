@@ -15,6 +15,9 @@ public class Order {
     private ZonedDateTime createdDateTime;
     private ZonedDateTime lastEventDateTime;
 
+    private Order nextOder;
+    private Order lastOrder;
+
     
     Order(String stockNo, String brokerID, String clientOrdID, OrderType orderType,
                  Action buyOrSell, Double price, int quantity){

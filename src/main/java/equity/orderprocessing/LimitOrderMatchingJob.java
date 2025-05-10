@@ -7,16 +7,16 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.LinkedList;
-import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 public class LimitOrderMatchingJob implements Runnable {
     private final String stockNo;
     private final OrderBook orderBook;
-    private final TreeMap<Double, LinkedList<Order>> bidMap;
-    private final TreeMap<Double, LinkedList<Order>> askMap;
+    private final ConcurrentSkipListMap<Double, LinkedList<Order>> bidMap;
+    private final ConcurrentSkipListMap<Double, LinkedList<Order>> askMap;
     private final LinkedBlockingQueue<MarketData> marketDataQueue;
     private final LinkedBlockingQueue<Trade> resultingTradeQueue;
 
@@ -96,10 +96,11 @@ public class LimitOrderMatchingJob implements Runnable {
         topBid.setLastEventDateTime(ZonedDateTime.now());
         topAsk.setQuantity(topAsk.getQuantity() - filledQty);
         topAsk.setLastEventDateTime(ZonedDateTime.now());
+        // BestAskPrice
         Double tradePrice = askMap.lastEntry().getKey();
         try {
             // Notify client that order is settled
-            resultingTradeQueue.put(OrderManager.requestTradeObj(topBid.getBrokerID(), topAsk.getBrokerID(), topBid.getClientOrdID(), topAsk.getClientOrdID(),
+            resultingTradeQueue.put(OrderPoolManager.requestTradeObj(topBid.getBrokerID(), topAsk.getBrokerID(), topBid.getClientOrdID(), topAsk.getClientOrdID(),
                     orderBook.getStockNo(), tradePrice, filledQty, LocalDateTime.now().toString()));
 
             // Remove order if it's totally filled
@@ -107,14 +108,14 @@ public class LimitOrderMatchingJob implements Runnable {
                 Order order = bestBidOrderList.pollFirst();
                 if (order != null) {
                     orderObjMapper.remove(order.getBrokerID() + "-" + order.getClientOrdID());
-                    OrderManager.returnOrderObj(order);
+                    OrderPoolManager.returnOrderObj(order);
                 }
             }
             if (topAsk.getQuantity() == 0) {
                 Order order = bestAskOrderList.pollFirst();
                 if (order != null) {
                     orderObjMapper.remove(order.getBrokerID() + "-" + order.getClientOrdID());
-                    OrderManager.returnOrderObj(order);
+                    OrderPoolManager.returnOrderObj(order);
                 }
             }
 

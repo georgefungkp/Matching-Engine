@@ -1,44 +1,56 @@
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Random;
 
-public class Test {
-    private static final int NUM_THREADS = 4;
-    private static final int NUM_OPERATIONS = 100000;
+class Node {
+    int value;
+    Node[] forward;
 
-    public static void main(String[] args) throws InterruptedException {
-        benchmarkMap(new ConcurrentSkipListMap<>(), "ConcurrentSkipListMap");
-        benchmarkMap(new TreeMap<>(), "TreeMap");
+    public Node(int value, int level) {
+        this.value = value;
+        this.forward = new Node[level + 1];
+    }
+}
+
+class SkipList {
+    private static final int MAX_LEVEL = 4;
+    private Node head = new Node(-1, MAX_LEVEL);
+    private Random random = new Random();
+
+    private int getRandomLevel() {
+        int level = 0;
+        while (random.nextBoolean() && level < MAX_LEVEL) {
+            level++;
+        }
+        return level;
     }
 
-    private static void benchmarkMap(Map<Integer, Integer> map, String mapName) throws InterruptedException {
-        ExecutorService executor = Executors.newFixedThreadPool(NUM_THREADS);
-        long startTime = System.nanoTime();
+    public void insert(int value) {
+        Node[] update = new Node[MAX_LEVEL + 1];
+        Node current = head;
 
-        for (int i = 0; i < NUM_OPERATIONS; i++) {
-            final int key = i;
-            executor.execute(() -> map.put(key, key));
+        for (int i = MAX_LEVEL; i >= 0; i--) {
+            while (current.forward[i] != null && current.forward[i].value < value) {
+                current = current.forward[i];
+            }
+            update[i] = current;
         }
 
-        executor.shutdown();
-        executor.awaitTermination(1, TimeUnit.MINUTES);
-        long endTime = System.nanoTime();
-
-        System.out.println(mapName + " - Insert Time: " + (endTime - startTime) / 1_000_000 + " ms");
-
-        // Lookup Benchmark
-        startTime = System.nanoTime();
-        for (int i = 0; i < NUM_OPERATIONS; i++) {
-            map.get(i);
+        int level = getRandomLevel();
+        Node newNode = new Node(value, level);
+        for (int i = 0; i <= level; i++) {
+            newNode.forward[i] = update[i].forward[i];
+            update[i].forward[i] = newNode;
         }
-        endTime = System.nanoTime();
-        System.out.println(mapName + " - Lookup Time: " + (endTime - startTime) / 1_000_000 + " ms");
+    }
+}
 
-        // Iteration Benchmark
-        startTime = System.nanoTime();
-        for (Map.Entry<Integer, Integer> entry : map.entrySet()) {
-            entry.getKey();
-        }
-        endTime = System.nanoTime();
-        System.out.println(mapName + " - Iteration Time: " + (endTime - startTime) / 1_000_000 + " ms");
+public class Test {
+    public static void main(String[] args) {
+        SkipList skipList = new SkipList();
+        skipList.insert(3);
+        skipList.insert(7);
+        skipList.insert(1);
+        skipList.insert(5);
+
+        System.out.println("Insertion completed!");
     }
 }

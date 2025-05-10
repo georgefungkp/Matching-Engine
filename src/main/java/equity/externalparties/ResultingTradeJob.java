@@ -1,7 +1,7 @@
 package equity.externalparties;
 
 import equity.fix.server.FIXTradeServerApp;
-import equity.objectpooling.OrderManager;
+import equity.objectpooling.OrderPoolManager;
 import equity.objectpooling.Trade;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -57,7 +57,7 @@ public class ResultingTradeJob implements Runnable {
                     tradeData.getExecutedQty(), tradeData.getExecutedPrice());
         }
         // Return Trade object to the pool
-        OrderManager.returnTradeObj(tradeData);
+        OrderPoolManager.returnTradeObj(tradeData);
     }
 
     /**

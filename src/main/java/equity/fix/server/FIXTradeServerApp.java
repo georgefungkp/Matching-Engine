@@ -1,6 +1,6 @@
 package equity.fix.server;
 
-import equity.objectpooling.OrderManager;
+import equity.objectpooling.OrderPoolManager;
 import equity.objectpooling.Order;
 import equity.objectpooling.Order.Action;
 import equity.objectpooling.Order.OrderType;
@@ -80,7 +80,7 @@ public class FIXTradeServerApp extends MessageCracker implements Application, Ru
         try {
             // Send an Execution Report (8) to acknowledge the order
             sendExecutionReport(sessionID, clientOrdID, newOrder, new ExecType(ExecType.NEW), new OrdStatus(OrdStatus.NEW));
-            orderQueue.put(OrderManager.requestOrderObj(stockNo, brokerID, clientOrdID, orderType, action,
+            orderQueue.put(OrderPoolManager.requestOrderObj(stockNo, brokerID, clientOrdID, orderType, action,
                     price, (int)quantity));
             log.debug("Put the {} order of {} to the order queue", action, stockNo);
         } catch (InterruptedException e) {

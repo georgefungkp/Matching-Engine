@@ -8,8 +8,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -42,7 +42,7 @@ public class OrderProcessingJob implements Runnable {
      * @param order the order to be placed into the order book
      */
     public void putOrder(@NotNull Order order) {
-        TreeMap<Double, LinkedList<Order>> orderMap;
+        ConcurrentSkipListMap<Double, LinkedList<Order>> orderMap;
         ReentrantReadWriteLock readWriteLock;
         OrderBook orderBook = orderBooks.get(order.getStockNo());
         if (orderBook == null) {
@@ -76,8 +76,8 @@ public class OrderProcessingJob implements Runnable {
             orderList.add(order);
             orderMap.put(order.getPrice(), orderList);
         }
-        orderObjMapper.put(order.getBrokerID() + "-" + order.getClientOrdID(), order);
         readWriteLock.writeLock().unlock();
+        orderObjMapper.put(order.getBrokerID() + "-" + order.getClientOrdID(), order);
         log.info(order);
         if (LOG_ENABLED)
             orderBook.showMap();

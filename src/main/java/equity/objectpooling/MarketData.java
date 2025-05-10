@@ -1,11 +1,11 @@
 package equity.objectpooling;
 
 import java.sql.Timestamp;
+import java.util.AbstractMap;
 import java.util.LinkedList;
-import java.util.TreeMap;
 
 public record MarketData(String stockNo, Double bestBid, Double bestAsk, Double lastTradePrice,
-                         Timestamp updatedTime, TreeMap<Double, LinkedList<Order>> bidMap,
-                         TreeMap<Double, LinkedList<Order>> askMap) {
+                         Timestamp updatedTime, AbstractMap<Double, LinkedList<Order>> bidMap,
+                         AbstractMap<Double, LinkedList<Order>> askMap) {
 
 }

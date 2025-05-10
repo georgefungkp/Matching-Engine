@@ -13,7 +13,7 @@ import static util.ReadConfig.dotenv;
 /**
  * A class responsible for managing orders through an object pool mechanism.
  */
-public class OrderManager {
+public class OrderPoolManager {
 
     private static final Map<String, OrderObjectPool> mainOrderObjMap = new ConcurrentHashMap<>();
     private static final Map<String, TradeObjectPool> mainTradeObjMap = new ConcurrentHashMap<>();

@@ -59,8 +59,8 @@ public class TestObjectPool {
 		Order askOrder1 = RandomOrderRequestGenerator.getNewLimitOrder("00001", "Broker 2",
 				"002", "S", 8.1, 300);
         orderProcessingJob.putOrder(askOrder1);
-		assertEquals(0, OrderManager.getFreeOrderCount("00001"));
-		assertEquals(2, OrderManager.getUsedOrderCount("00001"));
+		assertEquals(0, OrderPoolManager.getFreeOrderCount("00001"));
+		assertEquals(2, OrderPoolManager.getUsedOrderCount("00001"));
     }
 
 	/**
@@ -71,47 +71,47 @@ public class TestObjectPool {
 		orderObjMapper.clear();
 		marketDataQueue.clear();
         tradeDataQueue.clear();
-		OrderManager.clearObjects("00001");
-		OrderManager.clearObjects("00002");
+		OrderPoolManager.clearObjects("00001");
+		OrderPoolManager.clearObjects("00002");
 	}
 
     @Test
     public void testReUseOrderObject() throws InterruptedException {
-		assertEquals(0, OrderManager.getFreeTradeCount("00001"));
-		assertEquals(0, OrderManager.getUsedTradeCount("00001"));
+		assertEquals(0, OrderPoolManager.getFreeTradeCount("00001"));
+		assertEquals(0, OrderPoolManager.getUsedTradeCount("00001"));
         orderMatching.matchTopOrder();
-		assertEquals(2, OrderManager.getFreeOrderCount("00001"));
-		assertEquals(0, OrderManager.getUsedOrderCount("00001"));
-		assertEquals(0, OrderManager.getFreeTradeCount("00001"));
-		assertEquals(1, OrderManager.getUsedTradeCount("00001"));
+		assertEquals(2, OrderPoolManager.getFreeOrderCount("00001"));
+		assertEquals(0, OrderPoolManager.getUsedOrderCount("00001"));
+		assertEquals(0, OrderPoolManager.getFreeTradeCount("00001"));
+		assertEquals(1, OrderPoolManager.getUsedTradeCount("00001"));
 
 		Order askOrder1 = RandomOrderRequestGenerator.getNewLimitOrder("00001", "Broker 2",
 				"001", "S", 8.0, 100);
-		assertEquals(1, OrderManager.getFreeOrderCount("00001"));
-		assertEquals(1, OrderManager.getUsedOrderCount("00001"));
+		assertEquals(1, OrderPoolManager.getFreeOrderCount("00001"));
+		assertEquals(1, OrderPoolManager.getUsedOrderCount("00001"));
 
 		// stock 00002
 		Order askOrder2 = RandomOrderRequestGenerator.getNewLimitOrder("00002", "Broker 2",
 				"001", "S", 8.0, 100);
-		assertEquals(1, OrderManager.getFreeOrderCount("00001"));
-		assertEquals(1, OrderManager.getUsedOrderCount("00001"));
+		assertEquals(1, OrderPoolManager.getFreeOrderCount("00001"));
+		assertEquals(1, OrderPoolManager.getUsedOrderCount("00001"));
 
-		assertEquals(0, OrderManager.getFreeOrderCount("00002"));
-		assertEquals(1, OrderManager.getUsedOrderCount("00002"));
+		assertEquals(0, OrderPoolManager.getFreeOrderCount("00002"));
+		assertEquals(1, OrderPoolManager.getUsedOrderCount("00002"));
     }
 
 	@Test
   	public void testReUseTradeObject() throws Exception {
 		doReturn(100).when(fileChannelService).writeTradeToFile(any(Trade.class), any(Path.class));
 		orderMatching.matchTopOrder();
-		assertEquals(0, OrderManager.getFreeTradeCount("00001"));
-		assertEquals(1, OrderManager.getUsedTradeCount("00001"));
+		assertEquals(0, OrderPoolManager.getFreeTradeCount("00001"));
+		assertEquals(1, OrderPoolManager.getUsedTradeCount("00001"));
 		Trade testTrade = tradeDataQueue.take();
 		verify(fileChannelService, never()).writeTradeToFile(any(), any());
 		resultingTradeJob.processTradeData(testTrade);
 		verify(fileChannelService, times(1)).writeTradeToFile(eq(testTrade), any(Path.class));
-		assertEquals(1, OrderManager.getFreeTradeCount("00001"));
-		assertEquals(0, OrderManager.getUsedTradeCount("00001"));
+		assertEquals(1, OrderPoolManager.getFreeTradeCount("00001"));
+		assertEquals(0, OrderPoolManager.getUsedTradeCount("00001"));
 
 		// 2nd trade
 		OrderBook orderBook = orderBooks.get("00001");
@@ -126,7 +126,7 @@ public class TestObjectPool {
 		orderMatching.matchTopOrder();
 		Trade testTrade2 = tradeDataQueue.take();
 		resultingTradeJob.processTradeData(testTrade2);
-		assertEquals(1, OrderManager.getFreeTradeCount("00001"));
-		assertEquals(0, OrderManager.getUsedTradeCount("00001"));
+		assertEquals(1, OrderPoolManager.getFreeTradeCount("00001"));
+		assertEquals(0, OrderPoolManager.getUsedTradeCount("00001"));
 	}
 }
