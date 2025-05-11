@@ -1,7 +1,10 @@
 package equity.orderprocessing;
 
 import equity.objectpooling.Order;
+import equity.objectpooling.Order.Action;
+import equity.objectpooling.Order.OrderType;
 import equity.objectpooling.OrderBook;
+import equity.objectpooling.OrderPoolManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -65,16 +68,24 @@ public class OrderProcessingJob implements Runnable {
 
         // Put order to order book
         readWriteLock.writeLock().lock();
-        if (orderMap.containsKey(order.getPrice())) {
-            LinkedList<Order> orderList = orderMap.get(order.getPrice());
-            if ("M".equals(order.getOrderType()))
+        if (orderMap.containsKey(order.getPrice().get())) {
+            LinkedList<Order> orderList = orderMap.get(order.getPrice().get());
+            if ("M".equals(order.getOrderType())){
+                // Set double linked
+                order.setNextOrder(orderList.getFirst());
+                orderList.getFirst().setLastOrder(order);
                 orderList.addFirst(order);
-            else
+            }
+            else {
+                // Set double linked
+                order.setLastOrder(orderList.getLast());
+                orderList.getLast().setNextOrder(order);
                 orderList.addLast(order);
+            }
         } else {
             LinkedList<Order> orderList = new LinkedList<>();
             orderList.add(order);
-            orderMap.put(order.getPrice(), orderList);
+            orderMap.put(order.getPrice().get(), orderList);
         }
         readWriteLock.writeLock().unlock();
         orderObjMapper.put(order.getBrokerID() + "-" + order.getClientOrdID(), order);
@@ -82,6 +93,62 @@ public class OrderProcessingJob implements Runnable {
         if (LOG_ENABLED)
             orderBook.showMap();
 
+    }
+
+
+    /**
+     * Removes the order identified by the broker ID and client order ID from the corresponding order book.
+     * If the order is found and successfully removed, it is also removed from the order object mapper and returned to the order pool.
+     *
+     * @param brokerID the broker ID of the order to be removed
+     * @param clientOrdId the client order ID of the order to be removed
+     */
+    public void removeOrder(String brokerID, String clientOrdId){
+        Order order = orderObjMapper.get(brokerID + "-" + clientOrdId);
+        ConcurrentSkipListMap<Double, LinkedList<Order>> orderMap;
+        ReentrantReadWriteLock readWriteLock;
+        OrderBook orderBook = orderBooks.get(order.getStockNo());
+        if ("B".equals(order.getBuyOrSell())) {
+            orderMap = orderBook.getBidMap();
+            readWriteLock = orderBook.getBidLock();
+        } else {
+            orderMap = orderBook.getAskMap();
+            readWriteLock = orderBook.getAskLock();
+        }
+        readWriteLock.writeLock().lock();
+        if (!orderMap.get(order.getPrice().get()).remove(order))
+            log.error("System cannot find the order {}-{}", order.getBrokerID(), order.getClientOrdID());
+        // Remove the price in the map if list of order is exhausted
+        if (orderMap.get(order.getPrice().get()).isEmpty())
+            orderMap.pollLastEntry();
+
+        readWriteLock.writeLock().unlock();
+
+        orderObjMapper.remove(brokerID + "-" + clientOrdId);
+        OrderPoolManager.returnOrderObj(order);
+
+    }
+
+    /**
+     * Updates the specified order with the provided price and/or quantity.
+     *
+     * @param brokerID the broker ID of the order to update
+     * @param clientOrdId the client order ID of the order to update
+     * @param price the new price for the order, can be null if not updating price
+     * @param quantity the new quantity for the order, can be null if not updating quantity
+     */
+    public void updateOrder(String brokerID, String clientOrdId, Double price, Integer quantity){
+        Order order = orderObjMapper.get(brokerID + "-" + clientOrdId);
+        if (quantity != null)
+            order.setQuantity(quantity);
+        if (price != null) {
+            Order newOrder = OrderPoolManager.requestOrderObj(order.getStockNo(), order.getBrokerID(), order.getClientOrdID(),
+                    OrderType.getByValue(order.getOrderType()), Action.getByValue(order.getBuyOrSell()),
+                    price, order.getQuantity().get());
+            removeOrder(brokerID, clientOrdId);
+
+            putOrder(newOrder);
+        }
     }
 
 

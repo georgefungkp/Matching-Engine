@@ -116,7 +116,7 @@ public class TestOrderMatching {
 		assertEquals(2, marketData2.askMap().get(8.5).size());
 		Order order = marketData2.askMap().get(8.5).peek();
 		assertNotNull(order);
-		assertEquals(100, order.getQuantity());
+		assertEquals(100, order.getQuantity().get());
 
 		Trade trade2 = tradeDataQueue.poll();
 		assertNotNull(trade2);
@@ -152,7 +152,7 @@ public class TestOrderMatching {
 
 		LinkedList<Order> orderList1 = new LinkedList<>();
 		orderList1.add(bidOrder1);
-		orderBook.getBidMap().put(bidOrder1.getPrice(), orderList1);
+		orderBook.getBidMap().put(bidOrder1.getPrice().get(), orderList1);
 		orderMatching.matchTopOrder();
         assertNull(marketDataQueue.poll());
 		assertNull(tradeDataQueue.poll());
@@ -168,7 +168,7 @@ public class TestOrderMatching {
 
 		LinkedList<Order> orderList1 = new LinkedList<>();
 		orderList1.add(askOrder1);
-		orderBook.getBidMap().put(askOrder1.getPrice(), orderList1);
+		orderBook.getBidMap().put(askOrder1.getPrice().get(), orderList1);
 		orderMatching.matchTopOrder();
         assertNull(marketDataQueue.poll());
 		assertNull(tradeDataQueue.poll());

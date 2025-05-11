@@ -3,6 +3,8 @@ package equity.objectpooling;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class Order {
     private final String stockNo;
@@ -10,12 +12,12 @@ public class Order {
     private String clientOrdID;
     private String orderType;
     private String buyOrSell;
-    private Double price;
-    private int quantity;
+    private final AtomicReference<Double> price;
+    private final AtomicInteger quantity;
     private ZonedDateTime createdDateTime;
     private ZonedDateTime lastEventDateTime;
 
-    private Order nextOder;
+    private Order nextOrder;
     private Order lastOrder;
 
     
@@ -31,8 +33,8 @@ public class Order {
         this.clientOrdID = clientOrdID;
         this.orderType = orderType.value;
         this.buyOrSell = buyOrSell.value;
-        this.price = price;
-        this.quantity = quantity;
+        this.price = new AtomicReference<>(price);
+        this.quantity = new AtomicInteger(quantity);
         this.createdDateTime = createdDateTime;
         this.lastEventDateTime = lastEventDateTime;
     }
@@ -44,8 +46,8 @@ public class Order {
         this.clientOrdID = clientOrdID;
         this.orderType = orderType.value;
         this.buyOrSell = buyOrSell.value;
-        this.price = price;
-        this.quantity = quantity;
+        this.price.set(price);
+        this.quantity.set(quantity);
         this.createdDateTime = ZonedDateTime.now();
         this.lastEventDateTime = ZonedDateTime.now();
     }
@@ -138,18 +140,26 @@ public class Order {
 
     public String getBuyOrSell() { return buyOrSell; }
 
-    public Double getPrice() { return price; }
+    public AtomicReference<Double> getPrice() { return price; }
 
-    public int getQuantity() { return quantity; }
+    public AtomicInteger getQuantity() { return quantity; }
 
     public ZonedDateTime getCreatedDateTime() { return createdDateTime; }
 
     // setters
 
-    public void setPrice(Double price) { this.price = price; }
+    public void setPrice(Double price) { this.price.set(price); }
 
-    public void setQuantity(int quantity) { this.quantity = quantity; }
+    public void setQuantity(int quantity) { this.quantity.set(quantity); }
 
     public void setLastEventDateTime(ZonedDateTime lastEventDateTime) { this.lastEventDateTime = lastEventDateTime; }
+
+    public void setNextOrder(Order nextOrder) {
+        this.nextOrder = nextOrder;
+    }
+
+    public void setLastOrder(Order lastOrder) {
+        this.lastOrder = lastOrder;
+    }
 
 }

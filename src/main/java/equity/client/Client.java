@@ -57,7 +57,7 @@ public class Client {
 		//Stock No: Broker ID: Order Type: B/S: Price: Quantity
 		String message = order.getStockNo() + ":" + order.getBrokerID() + ":" + order.getClientOrdID() + ":"
 				+ order.getOrderType() + ":" + order.getBuyOrSell() + ":"
-				+ order.getPrice() + ":" + order.getQuantity();
+				+ order.getPrice().get() + ":" + order.getQuantity();
 //					message = "00001:003:L:B:8.1:500";
 //					message = "00001:003:L:B:8.2:400";
 //		message = "00001:001:M:S:8.2:10000";

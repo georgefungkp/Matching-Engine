@@ -90,11 +90,11 @@ public class LimitOrderMatchingJob implements Runnable {
 
         assert topBid != null;
         assert topAsk != null;
-        int filledQty = Math.min(topBid.getQuantity(), topAsk.getQuantity());
+        int filledQty = Math.min(topBid.getQuantity().get(), topAsk.getQuantity().get());
 
-        topBid.setQuantity(topBid.getQuantity() - filledQty);
+        topBid.setQuantity(topBid.getQuantity().get() - filledQty);
         topBid.setLastEventDateTime(ZonedDateTime.now());
-        topAsk.setQuantity(topAsk.getQuantity() - filledQty);
+        topAsk.setQuantity(topAsk.getQuantity().get() - filledQty);
         topAsk.setLastEventDateTime(ZonedDateTime.now());
         // BestAskPrice
         Double tradePrice = askMap.lastEntry().getKey();
@@ -104,14 +104,14 @@ public class LimitOrderMatchingJob implements Runnable {
                     orderBook.getStockNo(), tradePrice, filledQty, LocalDateTime.now().toString()));
 
             // Remove order if it's totally filled
-            if (topBid.getQuantity() == 0) {
+            if (topBid.getQuantity().get() == 0) {
                 Order order = bestBidOrderList.pollFirst();
                 if (order != null) {
                     orderObjMapper.remove(order.getBrokerID() + "-" + order.getClientOrdID());
                     OrderPoolManager.returnOrderObj(order);
                 }
             }
-            if (topAsk.getQuantity() == 0) {
+            if (topAsk.getQuantity().get() == 0) {
                 Order order = bestAskOrderList.pollFirst();
                 if (order != null) {
                     orderObjMapper.remove(order.getBrokerID() + "-" + order.getClientOrdID());

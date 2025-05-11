@@ -61,6 +61,8 @@ public class OrderObjectPool {
      */
     public synchronized void returnOrderObj(Order order){
         if (order != null){
+            order.setNextOrder(null);
+            order.setLastOrder(null);
             if (!inUsedOrderList.remove(order))
                 log.error("{} is not in use. Need to check ", order.toString());
             freeOrderList.add(order);

@@ -66,7 +66,7 @@ public class FileChannelService {
         StringBuilder message = new StringBuilder();
         for (Entry<Double, LinkedList<Order>> entry : orderBook.entrySet()) {
             for (Order order : entry.getValue()) {
-                message.append(order.getBrokerID()).append("-").append(order.getClientOrdID()).append(" ").append(order.getPrice()).append(" ").append(order.getQuantity()).append("\n");
+                message.append(order.getBrokerID()).append("-").append(order.getClientOrdID()).append(" ").append(order.getPrice().get()).append(" ").append(order.getQuantity()).append("\n");
             }
         }
         return message;

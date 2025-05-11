@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -85,13 +85,13 @@ public class TestObjectPool {
 		assertEquals(0, OrderPoolManager.getFreeTradeCount("00001"));
 		assertEquals(1, OrderPoolManager.getUsedTradeCount("00001"));
 
-		Order askOrder1 = RandomOrderRequestGenerator.getNewLimitOrder("00001", "Broker 2",
+		RandomOrderRequestGenerator.getNewLimitOrder("00001", "Broker 2",
 				"001", "S", 8.0, 100);
 		assertEquals(1, OrderPoolManager.getFreeOrderCount("00001"));
 		assertEquals(1, OrderPoolManager.getUsedOrderCount("00001"));
 
 		// stock 00002
-		Order askOrder2 = RandomOrderRequestGenerator.getNewLimitOrder("00002", "Broker 2",
+		RandomOrderRequestGenerator.getNewLimitOrder("00002", "Broker 2",
 				"001", "S", 8.0, 100);
 		assertEquals(1, OrderPoolManager.getFreeOrderCount("00001"));
 		assertEquals(1, OrderPoolManager.getUsedOrderCount("00001"));
@@ -128,5 +128,27 @@ public class TestObjectPool {
 		resultingTradeJob.processTradeData(testTrade2);
 		assertEquals(1, OrderPoolManager.getFreeTradeCount("00001"));
 		assertEquals(0, OrderPoolManager.getUsedTradeCount("00001"));
+	}
+
+
+	@Test
+	public void removeOrder(){
+		assertNotNull(orderBooks.get("00001").getBidMap());
+		assertEquals(8.1, orderBooks.get("00001").getBestBid());
+		orderProcessingJob.removeOrder("Broker 1","001");
+		assertTrue(orderBooks.get("00001").getBidMap().isEmpty());
+		assertNull(orderBooks.get("00001").getBestBid());
+	}
+
+	@Test
+	public void updateOrder() throws InterruptedException {
+		assertEquals(8.1, orderBooks.get("00001").getBestBid());
+		orderProcessingJob.updateOrder("Broker 1","001", 7.1, 100);
+		assertEquals(7.1, orderBooks.get("00001").getBestBid());
+		assertEquals(1, orderBooks.get("00001").getBidMap().size());
+		assertEquals(1, orderBooks.get("00001").getBidMap().get(7.1).size());
+		assertEquals(100, orderBooks.get("00001").getBidMap().get(7.1).getFirst().getQuantity().get());
+		orderMatching.matchTopOrder();
+		assertTrue(tradeDataQueue.isEmpty());
 	}
 }
