@@ -36,9 +36,9 @@ List here the prerequisites and links to the installation procedure of each:
 1. The data structure of order book is <b> Tree map </b> with <b> LinkedList </b>. So, the time complexity of a new limit price is O(log n), and first or last key is O(1) as Java always caches the leftmost/rightmost nodes. For cancellation, it's also O(log n). On average, Tree map is the best choice in JDK implementation.
 <img src="https://github.com/georgefungkp/Matching-Engine/blob/main/PQvsTreeMap.jpg" width="800" height="400">
 2. However, TreeMap may not be the best choice. I choose to use <b>ConcurrenctSkipListMap</b> to replace TreeMap as it is good for individual atomic operations. All basic operations (put, get, remove) are thread-safe by design so that it provides atomicity for single operations
-<img src="https://github.com/georgefungkp/Matching-Engine/blob/main/TreeMapvsConcurrentSkipListMap.jpg" width="800" height="400">
-#### The time complexity of order handling is shown as below:
+<img src="https://github.com/georgefungkp/Matching-Engine/blob/main/TreeMapvsConcurrentSkipListMap.jpg" width="800" height="300">
 
+#### The time complexity of order handling is shown as below:
 |Place Order   | O(log n)|
 |Cancel Order  | O(1)    |    
 |Amend Order   | Qty O(1), Price O(log n)  |    
