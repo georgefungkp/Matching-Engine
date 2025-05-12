@@ -37,9 +37,8 @@ List here the prerequisites and links to the installation procedure of each:
 <img src="https://github.com/georgefungkp/Matching-Engine/blob/main/PQvsTreeMap.jpg" width="800" height="400">
 2. However, TreeMap may not be the best choice. I choose to use <b>ConcurrenctSkipListMap</b> to replace TreeMap as it is good for individual atomic operations. All basic operations (put, get, remove) are thread-safe by design so that it provides atomicity for single operations
 <img src="https://github.com/georgefungkp/Matching-Engine/blob/main/TreeMapvsConcurrentSkipListMap.jpg" width="800" height="300">
-
-#### The time complexity of order handling is shown as below:
-| Left-aligned | Center-aligned |
+The time complexity of order handling is shown as below:
+| Action | Time Complexity |
 |:------------|:--------------|
 |Place Order   | O(log n)|
 |Cancel Order  | O(1)    |    
