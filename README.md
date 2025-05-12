@@ -34,8 +34,17 @@ List here the prerequisites and links to the installation procedure of each:
 
 ### Design consideration
 1. The data structure of order book is <b> Tree map </b> with <b> LinkedList </b>. So, the time complexity of a new limit price is O(log n), and first or last key is O(1) as Java always caches the leftmost/rightmost nodes. For cancellation, it's also O(log n). On average, Tree map is the best choice in JDK implementation.
+<img src="https://https://github.com/georgefungkp/Matching-Engine/blob/main/PQvsTreeMap.jpg" width="200" height="100">
 ![Why TreeMap?](https://github.com/georgefungkp/Matching-Engine/blob/main/PQvsTreeMap.jpg)
-2. At the 2nd phase, I use <b>ConcurrenctSkipListMap</b> to replace TreeMap as it is good for individual atomic operations. All basic operations (put, get, remove) are thread-safe by design so that it provides atomicity for single operations
+2. However, TreeMap may not be the best choice. I choose to use <b>ConcurrenctSkipListMap</b> to replace TreeMap as it is good for individual atomic operations. All basic operations (put, get, remove) are thread-safe by design so that it provides atomicity for single operations
+    The time complexity of order handling is shown as below:
+    |asasdf| Center-aligned |
+    |:------------|:--------------:|
+    |: Place Order     : | O(log n)|
+    | Cancel Order   | O(1)      |    
+    | Amend Order   | Qty O(1), Price O(log n)  |    
+    | Search Order   | O(1)      |    
+
 3. Use Hashmap to record order object reference so that it's easy to amend or cancel the order. 
 4. User Double instead of BigDecimal in the NavigatorMap to save memory footprint (8 bytes vs 32+ bytes).
 5. Order object pool is created so that we can minimize number of objects and times of GC in the memory, and reduce latency of order creation.
