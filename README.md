@@ -39,10 +39,12 @@ List here the prerequisites and links to the installation procedure of each:
 <img src="https://github.com/georgefungkp/Matching-Engine/blob/main/TreeMapvsConcurrentSkipListMap.jpg" width="800" height="300">
 
 #### The time complexity of order handling is shown as below:
+| Left-aligned | Center-aligned |
+|:------------|:--------------|
 |Place Order   | O(log n)|
 |Cancel Order  | O(1)    |    
-|Amend Order   | Qty O(1), Price O(log n)  |    
-|Search Order   | O(1)      |    
+|Amend Order   | Qty O(1), Price O(log n)  |
+|Search Order   | O(1)      |
 
 3. Use Hashmap to record order object reference so that it's easy to amend or cancel the order. 
 4. User Double instead of BigDecimal in the NavigatorMap to save memory footprint (8 bytes vs 32+ bytes).
