@@ -34,7 +34,6 @@ List here the prerequisites and links to the installation procedure of each:
 
 ### Design consideration
 - The data structure of order book is <b> Tree map </b> with <b> LinkedList </b>. So, the time complexity of a new limit price is O(log n), and first or last key is O(1) as Java always caches the leftmost/rightmost nodes. For cancellation, it's also O(log n). On average, Tree map is the best choice in JDK implementation.
-<img src="https://github.com/georgefungkp/Matching-Engine/blob/main/PQvsTreeMap.jpg" width="800" height="400">
 
 | Operation               | PriorityQueue(Binary Heap) | TreeMap(Red-black Tree)    |
 |:------------------------|:---------------------------|:---------------------------|
@@ -45,7 +44,10 @@ List here the prerequisites and links to the installation procedure of each:
 | Iterate in Sorted Order | O(n log n)                 | O(n)                       |
 
 
-- In the single-thread environment, TreeMap ensure the performance is O(log n). However, TreeMap may not be the best choice in the concurrency. I choose to use <b>ConcurrenctSkipListMap</b> to replace TreeMap as it is good for individual atomic operations. All basic operations (put, get, remove) are thread-safe by design so that it provides atomicity for single operations.
+- In the single-thread environment, TreeMap ensures the performance is O(log n). However, TreeMap may not be the best choice in the concurrency. 
+So, I choose to use <b>ConcurrenctSkipListMap</b> to replace TreeMap as it is good for individual atomic operations. All basic operations (put, get, remove) are thread-safe by design 
+so that it provides atomicity for single operations.
+
 The time complexity of order handling is shown as below:
 
 | Operation | Time Complexity          |
