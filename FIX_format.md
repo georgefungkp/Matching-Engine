@@ -18,23 +18,23 @@
 | 1     | Account         | Account identifier |
 | 11    | ClOrdID         | Unique identifier for order as assigned by institution |
 | 37    | OrderID         | Unique identifier for order as assigned by broker/exchange |
-**| 38    | OrderQty        | Quantity ordered |**
-| 40    | OrdType         | Order type (e.g., "1"=Market, "2"=Limit) |
-| 44    | Price           | Price per unit of quantity |
-| 54    | Side            | Side of order (1=Buy, 2=Sell, etc.) |
-| 55    | Symbol          | Security identifier (ticker symbol) |
+| 38⚡   | OrderQty        | Quantity ordered |
+| 40⚡   | OrdType         | Order type (e.g., "1"=Market, "2"=Limit) |
+| 44⚡   | Price           | Price per unit of quantity |
+| 54⚡   | Side            | Side of order (1=Buy, 2=Sell, etc.) |
+| 55⚡   | Symbol          | Security identifier (ticker symbol) |
 | 59    | TimeInForce     | Specifies how long the order remains active (e.g., "0"=Day, "1"=GTC) |
 
 ### Execution Tags
-| Tag | Name            | Description |
-|-----|-----------------|-------------|
-| 6   | AvgPx           | Calculated average price of all fills on this order |
-| 14  | CumQty          | Total quantity filled |
-| 17  | ExecID          | Unique identifier for execution |
-| 20  | ExecTransType   | Execution transaction type (0=New, 1=Cancel, 2=Correct) |
-| 39  | OrdStatus       | Order status (0=New, 2=Filled, 4=Canceled, 8=Rejected) |
-| 150 | ExecType        | Execution type (0=New, 4=Canceled, F=Trade) |
-| 151 | LeavesQty       | Quantity remaining to be executed |
+| Tag   | Name            | Description |
+|-------|-----------------|-------------|
+| 6⚡    | AvgPx           | Calculated average price of all fills on this order |
+| 14⚡   | CumQty          | Total quantity filled |
+| 17    | ExecID          | Unique identifier for execution |
+| 20    | ExecTransType   | Execution transaction type (0=New, 1=Cancel, 2=Correct) |
+| 39⚡   | OrdStatus       | Order status (0=New, 2=Filled, 4=Canceled, 8=Rejected) |
+| 150   | ExecType        | Execution type (0=New, 4=Canceled, F=Trade) |
+| 151⚡  | LeavesQty       | Quantity remaining to be executed |
 
 ### Additional Common Tags
 | Tag | Name            | Description |
