@@ -26,15 +26,15 @@
 | 59    | TimeInForce     | Specifies how long the order remains active (e.g., "0"=Day, "1"=GTC) |
 
 ### Execution Tags
-| Tag   | Name            | Description |
-|-------|-----------------|-------------|
-| 6⚡    | AvgPx           | Calculated average price of all fills on this order |
-| 14⚡   | CumQty          | Total quantity filled |
-| 17    | ExecID          | Unique identifier for execution |
-| 20    | ExecTransType   | Execution transaction type (0=New, 1=Cancel, 2=Correct) |
-| 39⚡   | OrdStatus       | Order status (0=New, 2=Filled, 4=Canceled, 8=Rejected) |
-| 150   | ExecType        | Execution type (0=New, 4=Canceled, F=Trade) |
-| 151⚡  | LeavesQty       | Quantity remaining to be executed |
+| Tag  | Name            | Description |
+|------|-----------------|-------------|
+| 6⚡   | AvgPx           | Calculated average price of all fills on this order |
+| 14⚡  | CumQty          | Total quantity filled |
+| 17   | ExecID          | Unique identifier for execution |
+| 20   | ExecTransType   | Execution transaction type (0=New, 1=Cancel, 2=Correct) |
+| 39⚡  | OrdStatus       | Order status (0=New, 2=Filled, 4=Canceled, 8=Rejected) |
+| 150  | ExecType        | Execution type (0=New, 4=Canceled, F=Trade) |
+| 151⚡ | LeavesQty       | Quantity remaining to be executed |
 
 ### Additional Common Tags
 | Tag | Name            | Description |
