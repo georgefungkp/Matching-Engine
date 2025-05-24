@@ -1,20 +1,20 @@
 ## Common FIX Tags Reference
 
 ### Header Tags
-| Tag | Name            | Description |
-|----:|-----------------|-------------|
-|   8 | BeginString     | Identifies beginning of FIX message (e.g., "FIX.4.2") |
-|   9 | BodyLength      | Byte count of message body (from tag 35 onward) |
+| Tag | Name            | Description                                                     |
+|----:|:----------------|:----------------------------------------------------------------|
+|   8 | BeginString     | Identifies beginning of FIX message (e.g., "FIX.4.2")           |
+|   9 | BodyLength      | Byte count of message body (from tag 35 onward)                 |
 |  35 | MsgType         | Type of FIX message (e.g., "D"=New Order, "8"=Execution Report) |
-|  34 | MsgSeqNum       | Sequence number of message |
-|  49 | SenderCompID    | Sender's company identifier |
-|  56 | TargetCompID    | Target company identifier |
-|  52 | SendingTime     | Time message was sent (UTC) |
-|  57 | TargetSubID     | Target sub-identifier (used for routing) |
+|  34 | MsgSeqNum       | Sequence number of message                                      |
+|  49 | SenderCompID    | Sender's company identifier                                     |
+|  56 | TargetCompID    | Target company identifier                                       |
+|  52 | SendingTime     | Time message was sent (UTC)                                     |
+|  57 | TargetSubID     | Target sub-identifier (used for routing)                        |
 
 ### Order-Related Tags
 | Tag | Name            | Description                                                          |
-|----:|-----------------|----------------------------------------------------------------------|
+|----:|:----------------|:---------------------------------------------------------------------|
 |   1 | Account         | Account identifier                                                   |
 |  11 | ClOrdID         | Unique identifier for order as assigned by institution               |
 |  37 | OrderID         | Unique identifier for order as assigned by broker/exchange           |
@@ -27,7 +27,7 @@
 
 ### Execution Tags
 |  Tag | Name          | Description                                             |
-|-----:|---------------|---------------------------------------------------------|
+|-----:|:--------------|:--------------------------------------------------------|
 |   ⚡6 | AvgPx         | Calculated average price of all fills on this order     |
 |  ⚡14 | CumQty        | Total quantity filled                                   |
 |  ⚡31 | LastPx        | Last traded price                                       |
@@ -40,7 +40,7 @@
 
 ### Additional Common Tags
 | Tag | Name            | Description                                              |
-|----:|-----------------|----------------------------------------------------------|
+|----:|:----------------|:---------------------------------------------------------|
 |  10 | CheckSum        | Three byte checksum of message (mod 256)                 |
 |  15 | Currency        | Currency code (ISO 4217)                                 |
 |  18 | ExecInst        | Execution instructions (e.g., "6"=Pegged)                |
