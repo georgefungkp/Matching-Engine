@@ -44,18 +44,18 @@ List here the prerequisites and links to the installation procedure of each:
 | Iterate in Sorted Order | O(n log n)                 | O(n)                       |
 
 
-- In the single-thread environment, TreeMap ensures the performance is O(log n). However, TreeMap may not be the best choice in the concurrency. 
+- In the single-thread environment, TreeMap ensures the performance is O(log n). However, TreeMap may not be the best choice in the concurrency. It's not thread-safe and developer has to handle race conditions.
 So, I choose to use <b>ConcurrenctSkipListMap</b> to replace TreeMap as it is good for individual atomic operations. All basic operations (put, get, remove) are thread-safe by design 
 so that it provides atomicity for single operations.
 
 The time complexity of order handling is shown as below:
 
-| Operation | Time Complexity          |
-|:------------|:-------------------------|
-|Place Order   | O(log n)                 |
-|Cancel Order  | O(1)                     |
-|Amend Order   | Qty O(1), Price O(log n) |
-|Search Order   | O(1)                    |
+| Operation    | Time Complexity          |
+|:-------------|:-------------------------|
+| Place Order  | O(log n)                 |
+| Cancel Order | O(1)                     |
+| Amend Order  | Qty O(1), Price O(log n) |
+| Search Order | O(1)                     |
 
 - Use Hashmap to record order object reference so that it's easy to amend or cancel the order. 
 - Use Double instead of BigDecimal in the NavigatorMap to save memory footprint (8 bytes vs 32+ bytes).
