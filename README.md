@@ -59,8 +59,38 @@ The time complexity of order handling is shown as below:
 
 - Use Hashmap to record order object reference so that it's easy to amend or cancel the order. 
 - Use Double instead of BigDecimal in the NavigatorMap to save memory footprint (8 bytes vs 32+ bytes).
-- Order object pool is created so that we can minimize number of objects and times of GC in the memory, and reduce latency of order creation.
-- Difference exchanges give different priority to market order. In this design, market order is treated as the best available order and is executed first.
+- Order object pool is created so that we can minimize the number of objects and times of GC in the memory, and reduce latency of order creation.
+- Difference exchanges give different priority to market order. In this design, the market order is treated as the best available order and is executed first.
+
+## Design Patterns
+I have applied several common design patterns in my system design. 
+1. **Object Pool Pattern**
+    - Clearly implemented through `OrderPoolManager``OrderObjectPool``TradeObjectPool`
+    - Used to manage and reuse Order and Trade objects
+    - Helps reduce the overhead of creating new objects by recycling unused ones
+
+2. **Singleton Pattern**
+    - Used in with static initialization and methods `OrderPoolManager`
+    - Ensures single instances of order and trade pools per stock
+    - Manages the lifecycle of order and trade objects globally
+
+3. **Factory Method Pattern**
+    - Implemented in with methods like and `OrderPoolManager``requestOrderObj``requestTradeObj`
+    - Encapsulates object creation logic while maintaining the object poo
+
+4. **Observer Pattern**
+    - The system uses multiple queues: `orderQueue``marketDataQueue``resultingTradeQueue`
+    - Different components observe and process these queues
+
+5. **Command Pattern**
+    - Orders represent commands that need to be executed
+    - Each order encapsulates all necessary information for processing
+    - Different types of orders (Market, Limit) can be processed differently
+
+6. **Strategy Pattern**
+    - Different order types (MARKET, LIMIT) suggest different execution strategies
+    - Order matching can be performed using different strategies based on an order type
+
 
 ## Message cycle of FIX in a trade 
 [The following is just for information. Not every message type is implemented in the project.]

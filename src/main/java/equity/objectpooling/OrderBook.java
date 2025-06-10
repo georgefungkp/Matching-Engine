@@ -11,8 +11,10 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 
-/*
- * Each stock has 2 order books
+/**
+ * Represents an OrderBook for a particular stock, containing bid and ask order books.
+ * Each price in the order book has a list of corresponding orders from different brokers.
+ * Allows retrieval of best bid price, best ask price, lowest bid price, and highest ask price.
  */
 public class OrderBook {
     private static final Logger log = LogManager.getLogger(OrderBook.class);
@@ -68,7 +70,10 @@ public class OrderBook {
     }
 
     /**
-     * Returns the lowest*/
+     * Returns the lowest bid price from the bid order book.
+     *
+     * @return the lowest bid price or null if the bid order book is empty
+     */
     public Double getLowestBid(){
         bidLock.readLock().lock();
         try {
@@ -92,10 +97,22 @@ public class OrderBook {
         }
     }
 
+    /**
+     * Retrieves the bid order book map, which is a sorted concurrent map with bid prices as keys and a list of corresponding bid orders as values.
+     * The map allows for quick access to bid orders based on their price.
+     *
+     * @return ConcurrentSkipListMap containing bid prices and corresponding bid orders
+     */
     public ConcurrentSkipListMap<Double, LinkedList<Order>> getBidMap() {
         return bidMap;
     }
 
+    /**
+     * Retrieves the ask order book map, which is a sorted concurrent map with ask prices as keys and a list of corresponding ask orders as values.
+     * The map allows for quick access to ask orders based on their price.
+     *
+     * @return ConcurrentSkipListMap containing ask prices and corresponding ask orders
+     */
     public ConcurrentSkipListMap<Double, LinkedList<Order>> getAskMap() {
         return askMap;
     }
@@ -106,6 +123,12 @@ public class OrderBook {
         showMap("S");
     }
 
+    /**
+     * Displays information related to orders in the specified order book based on the given buyOrSell parameter.
+     * This method prints details such as stock number, description, best and last price, and order information at different price levels.
+     *
+     * @param buyOrSell the indicator for whether the operation is for buying ("B") or selling ("S")
+     */
     public void showMap(String buyOrSell) {
         ConcurrentSkipListMap<Double, LinkedList<Order>> orderMap;
         ReentrantReadWriteLock readWriteLock;
