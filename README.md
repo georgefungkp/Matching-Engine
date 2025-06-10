@@ -64,7 +64,7 @@ The time complexity of order handling is shown as below:
 - Order object pool is created so that we can minimize the number of objects and times of GC in the memory, and reduce latency of order creation.
 - Difference exchanges give different priority to market order. In this design, the market order is treated as the best available order and is executed first.
 
-## Design Patterns
+### Design Patterns
 I have applied several common design patterns in my system design. 
 1. **Object Pool Pattern**
     - Clearly implemented through `OrderPoolManager``OrderObjectPool``TradeObjectPool`
