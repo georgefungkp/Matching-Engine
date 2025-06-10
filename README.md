@@ -32,7 +32,16 @@ List here the prerequisites and links to the installation procedure of each:
 - [Java SDK](https://www.oracle.com/java/technologies/downloads/)
 - An IDE of your choice (Although this project was developed using Intellij IDEA)
 
-### Design consideration
+## Time Complexity of main operations
+
+| Operation    | Time Complexity          |
+|:-------------|:-------------------------|
+| Place Order  | O(log n)                 |
+| Cancel Order | O(1)                     |
+| Amend Order  | Qty O(1), Price O(log n) |
+| Search Order | O(1)                     |
+
+## Design Consideration
 - The data structure of order book is <b> Tree map </b> with <b> LinkedList </b>. So, the time complexity of a new limit price is O(log n), and first or last key is O(1) as Java always caches the leftmost/rightmost nodes. For cancellation, it's also O(log n). On average, Tree map is the best choice in JDK implementation.
 
 | Operation               | PriorityQueue(Binary Heap) | TreeMap(Red-black Tree)    |
@@ -49,13 +58,6 @@ So, I choose to use <b>ConcurrenctSkipListMap</b> to replace TreeMap as it is go
 so that it provides atomicity for single operations.
 
 The time complexity of order handling is shown as below:
-
-| Operation    | Time Complexity          |
-|:-------------|:-------------------------|
-| Place Order  | O(log n)                 |
-| Cancel Order | O(1)                     |
-| Amend Order  | Qty O(1), Price O(log n) |
-| Search Order | O(1)                     |
 
 - Use Hashmap to record order object reference so that it's easy to amend or cancel the order. 
 - Use Double instead of BigDecimal in the NavigatorMap to save memory footprint (8 bytes vs 32+ bytes).
