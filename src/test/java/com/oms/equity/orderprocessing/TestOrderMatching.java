@@ -1,4 +1,4 @@
-package com.baml.equity.orderprocessing;
+package com.oms.equity.orderprocessing;
 
 import equity.client.RandomOrderRequestGenerator;
 import equity.objectpooling.*;

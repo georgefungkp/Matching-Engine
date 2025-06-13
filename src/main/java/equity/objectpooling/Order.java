@@ -17,10 +17,6 @@ public class Order {
     private ZonedDateTime createdDateTime;
     private ZonedDateTime lastEventDateTime;
 
-    private Order nextOrder;
-    private Order lastOrder;
-
-    
     Order(String stockNo, String brokerID, String clientOrdID, OrderType orderType,
                  Action buyOrSell, Double price, int quantity){
         this(stockNo, brokerID, clientOrdID, orderType, buyOrSell, price, quantity, ZonedDateTime.now(), ZonedDateTime.now());
@@ -153,13 +149,5 @@ public class Order {
     public void setQuantity(int quantity) { this.quantity.set(quantity); }
 
     public void setLastEventDateTime(ZonedDateTime lastEventDateTime) { this.lastEventDateTime = lastEventDateTime; }
-
-    public void setNextOrder(Order nextOrder) {
-        this.nextOrder = nextOrder;
-    }
-
-    public void setLastOrder(Order lastOrder) {
-        this.lastOrder = lastOrder;
-    }
 
 }
