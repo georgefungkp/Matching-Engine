@@ -1,4 +1,4 @@
-package com.oms.equity.orderprocessing;
+package equity.orderprocessing;
 
 import equity.client.RandomOrderRequestGenerator;
 import equity.externalparties.ResultingTradeJob;
@@ -7,8 +7,6 @@ import equity.objectpooling.MarketData;
 import equity.objectpooling.Order;
 import equity.objectpooling.OrderBook;
 import equity.objectpooling.Trade;
-import equity.orderprocessing.LimitOrderMatchingJob;
-import equity.orderprocessing.OrderProcessingJob;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
