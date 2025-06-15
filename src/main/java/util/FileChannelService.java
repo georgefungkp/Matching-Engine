@@ -8,6 +8,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
@@ -62,9 +63,9 @@ public class FileChannelService {
         return noOfBytes;
     }
 
-    public StringBuilder orderBookToTxt(AbstractMap<Double, LinkedList<Order>> orderBook) {
+    public StringBuilder orderBookToTxt(AbstractMap<BigDecimal, LinkedList<Order>> orderBook) {
         StringBuilder message = new StringBuilder();
-        for (Entry<Double, LinkedList<Order>> entry : orderBook.entrySet()) {
+        for (Entry<BigDecimal, LinkedList<Order>> entry : orderBook.entrySet()) {
             for (Order order : entry.getValue()) {
                 message.append(order.getBrokerID()).append("-").append(order.getClientOrdID()).append(" ").append(order.getPrice().get()).append(" ").append(order.getQuantity()).append("\n");
             }

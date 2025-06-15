@@ -5,6 +5,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import util.SequenceGenerator;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -25,16 +26,14 @@ public class TradeObjectPool {
     }
 
 
-
-    public synchronized Trade makeANewTrade(String buyBrokerID, String sellBrokerID, String buyOrderID, String sellOrderID,
-                                                   String stockNo, Double executedPrice, int executedQty, String executionDateTim){
+    public synchronized Trade makeANewTrade(Order bidOrder, Order askOrder, String stockNo, BigDecimal executedPrice, int executedQty, String executionDateTim){
         Trade newTrade;
         if (freeTradeObjList.isEmpty()){
-            newTrade = new Trade(buyBrokerID, sellBrokerID, buyOrderID, sellOrderID, stockNo, executedPrice, executedQty, executionDateTim);
+            newTrade = new Trade(bidOrder, askOrder, stockNo, executedPrice, executedQty, executionDateTim);
         }else{
             Iterator<Trade> iterator = freeTradeObjList.iterator();
             newTrade = iterator.next();
-            newTrade.updateForReuse(buyBrokerID, sellBrokerID, buyOrderID, sellOrderID, stockNo, executedPrice, executedQty, executionDateTim);
+            newTrade.reset(bidOrder, askOrder, stockNo, executedPrice, executedQty, executionDateTim);
             freeTradeObjList.remove(newTrade);
         }
         inUsedTradeObjList.add(newTrade);

@@ -9,6 +9,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 
+import java.math.BigDecimal;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Objects;
@@ -69,7 +70,7 @@ public class OrderProcessingJob implements Runnable {
         Objects.requireNonNull(order, "Order cannot be null");
 
         // Declare variables at the top of the method
-        ConcurrentSkipListMap<Double, LinkedList<Order>> orderMap;
+        ConcurrentSkipListMap<BigDecimal, LinkedList<Order>> orderMap;
         ReentrantReadWriteLock readWriteLock;
 
         // Get the order book for this stock
@@ -79,8 +80,8 @@ public class OrderProcessingJob implements Runnable {
             return;
         }
 
-        // Determine which order book to use (bid or ask)
-        if (BUY_ORDER.equals(order.getBuyOrSell())) {
+        // Determine which order a book to use (bid or ask)
+        if (order.isBuyOrder()) {
             orderMap = orderBook.getBidMap();
             readWriteLock = orderBook.getBidLock();
         } else {
@@ -88,16 +89,11 @@ public class OrderProcessingJob implements Runnable {
             readWriteLock = orderBook.getAskLock();
         }
 
-        // Handle market orders - set price based on best available in opposite book
-        if (MARKET_ORDER.equals(order.getOrderType())) {
-            if (BUY_ORDER.equals(order.getBuyOrSell())) {
-                order.setPrice(orderBook.getHighestAsk());
-            } else {
-                order.setPrice(orderBook.getLowestBid());
-            }
-        }
+        // Handle market orders - set price based on best available in an opposite book
+        if (order.isMarketOrder())
+            order.setPrice(order.isBuyOrder()? orderBook.getBestAsk():orderBook.getBestBid());
 
-        // Check if price is available after setting market order price
+        // Check if the price is available after setting the market order price
         if (order.getPrice().get() == null) {
             log.warn("Cannot process order: no price available for market order {}-{}", 
                     order.getBrokerID(), order.getClientOrdID());
@@ -107,12 +103,12 @@ public class OrderProcessingJob implements Runnable {
         // Add order to the order book under lock protection
         readWriteLock.writeLock().lock();
         try {
-            Double orderPrice = order.getPrice().get();
+            BigDecimal orderPrice = order.getPrice().get();
             if (orderMap.containsKey(orderPrice)) {
-                // Add to existing price level
+                // Add to the existing price level
                 LinkedList<Order> orderList = orderMap.get(orderPrice);
 
-                if (MARKET_ORDER.equals(order.getOrderType())) {
+                if (order.isMarketOrder()) {
                     // Market orders go to the front of the queue (FIFO)
                     orderList.addFirst(order);
                 } else {
@@ -120,7 +116,7 @@ public class OrderProcessingJob implements Runnable {
                     orderList.addLast(order);
                 }
             } else {
-                // Create new price level
+                // Create a new price level
                 LinkedList<Order> orderList = new LinkedList<>();
                 orderList.add(order);
                 orderMap.put(orderPrice, orderList);
@@ -158,7 +154,7 @@ public class OrderProcessingJob implements Runnable {
      */
     public boolean removeOrder(String brokerID, String clientOrdId) {
         // Declare variables at the top of the method
-        ConcurrentSkipListMap<Double, LinkedList<Order>> orderMap;
+        ConcurrentSkipListMap<BigDecimal, LinkedList<Order>> orderMap;
         ReentrantReadWriteLock readWriteLock;
 
         Order order = orderObjMapper.get(brokerID + "-" + clientOrdId);
@@ -174,14 +170,14 @@ public class OrderProcessingJob implements Runnable {
             return false;
         }
 
-        Double orderPrice = order.getPrice().get();
+        BigDecimal orderPrice = order.getPrice().get();
         if (orderPrice == null) {
             log.warn("Cannot remove order: Order {}-{} has null price", brokerID, clientOrdId);
             return false;
         }
 
         // Determine if this is a bid or ask order
-        if (BUY_ORDER.equals(order.getBuyOrSell())) {
+        if (order.isBidOrder()) {
             orderMap = orderBook.getBidMap();
             readWriteLock = orderBook.getBidLock();
         } else {
@@ -189,7 +185,7 @@ public class OrderProcessingJob implements Runnable {
             readWriteLock = orderBook.getAskLock();
         }
 
-        boolean removed = false;
+        boolean removed;
         readWriteLock.writeLock().lock();
         try {
             LinkedList<Order> orderList = orderMap.get(orderPrice);
@@ -206,7 +202,7 @@ public class OrderProcessingJob implements Runnable {
             if (!removed) {
                 log.error("System cannot find the order {}-{} in the order list", brokerID, clientOrdId);
             } else {
-                // If price level is now empty, remove it from the map
+                // If the price level is now empty, remove it from the map
                 if (orderList.isEmpty()) {
                     orderMap.remove(orderPrice);
                 }
@@ -219,7 +215,7 @@ public class OrderProcessingJob implements Runnable {
             readWriteLock.writeLock().unlock();
         }
 
-        // If order was removed from the book, also remove from mapper and return to pool
+        // If order was removed from the book, also remove from the mapper and return to the object pool
         if (removed) {
             orderObjMapper.remove(brokerID + "-" + clientOrdId);
             OrderPoolManager.returnOrderObj(order);
@@ -239,11 +235,11 @@ public class OrderProcessingJob implements Runnable {
      *
      * @param brokerID the broker ID of the order to update
      * @param clientOrdId the client order ID of the order to update
-     * @param price the new price for the order, can be null if not updating price
-     * @param quantity the new quantity for the order, can be null if not updating quantity
+     * @param price the new price for the order can be null if not updating price
+     * @param quantity the new quantity for the order can be null if not updating quantity
      * @return true if the order was successfully updated, false otherwise
      */
-    public boolean updateOrder(String brokerID, String clientOrdId, Double price, Integer quantity) {
+    public boolean updateOrder(String brokerID, String clientOrdId, BigDecimal price, Integer quantity) {
         // Declare variables at the top of the method
         ReentrantReadWriteLock readWriteLock;
 
@@ -260,7 +256,7 @@ public class OrderProcessingJob implements Runnable {
         }
 
         // If only updating quantity, we can do it directly without removing/re-adding
-        if (price == null && quantity != null) {
+        if (quantity != null) {
             OrderBook orderBook = orderBooks.get(order.getStockNo());
 
             if (orderBook == null) {
@@ -268,7 +264,7 @@ public class OrderProcessingJob implements Runnable {
                 return false;
             }
 
-            if (BUY_ORDER.equals(order.getBuyOrSell())) {
+            if (order.isBidOrder()) {
                 readWriteLock = orderBook.getBidLock();
             } else {
                 readWriteLock = orderBook.getAskLock();
@@ -282,44 +278,46 @@ public class OrderProcessingJob implements Runnable {
                 if (LOG_ENABLED) {
                     orderBook.showMap();
                 }
-                return true;
             } finally {
                 readWriteLock.writeLock().unlock();
             }
         }
 
-        // For price changes, we need to remove and re-add the order
-        try {
-            // Create a new order with updated price and/or quantity
-            Order newOrder = OrderPoolManager.requestOrderObj(
-                    order.getStockNo(), 
-                    order.getBrokerID(), 
-                    order.getClientOrdID(),
-                    OrderType.getByValue(order.getOrderType()), 
-                    Action.getByValue(order.getBuyOrSell()),
-                    price != null ? price : order.getPrice().get(), 
-                    quantity != null ? quantity : order.getQuantity().get());
+        if (price != null) {
+            // For price changes, we need to remove and re-add the order
+            try {
+                // Create a new order with an updated price and/or quantity
+                Order newOrder = OrderPoolManager.requestOrderObj(
+                        order.getStockNo(),
+                        order.getBrokerID(),
+                        order.getClientOrdID(),
+                        OrderType.getByValue(order.getOrderType()),
+                        Action.getByValue(order.getBuyOrSell()),
+                        price,
+                        quantity != null ? quantity : order.getQuantity().get());
 
-            // First remove the old order
-            if (!removeOrder(brokerID, clientOrdId)) {
-                // If removal failed, return the new order to the pool
-                OrderPoolManager.returnOrderObj(newOrder);
+                // First remove the old order
+                if (!removeOrder(brokerID, clientOrdId)) {
+                    // If removal failed, return the new order to the pool
+                    OrderPoolManager.returnOrderObj(newOrder);
+                    return false;
+                }
+
+                // Then add the new order
+                putOrder(newOrder);
+
+                log.info("Updated order {}-{} with new price=${} and quantity={}",
+                        brokerID, clientOrdId,
+                        price,
+                        quantity != null ? quantity : order.getQuantity().get());
+
+            } catch (Exception e) {
+                log.error("Error updating order {}-{}: {}", brokerID, clientOrdId, e.getMessage(), e);
                 return false;
             }
-
-            // Then add the new order
-            putOrder(newOrder);
-
-            log.info("Updated order {}-{} with new price=${} and quantity={}", 
-                    brokerID, clientOrdId, 
-                    price != null ? price : order.getPrice().get(),
-                    quantity != null ? quantity : order.getQuantity().get());
-
-            return true;
-        } catch (Exception e) {
-            log.error("Error updating order {}-{}: {}", brokerID, clientOrdId, e.getMessage(), e);
-            return false;
         }
+        // Update successfully
+        return true;
     }
 
 

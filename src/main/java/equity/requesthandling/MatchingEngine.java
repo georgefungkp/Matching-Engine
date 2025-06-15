@@ -16,6 +16,7 @@ import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.math.BigDecimal;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
@@ -62,17 +63,18 @@ public class MatchingEngine extends Thread {
      * Each stock is associated with an OrderBook that contains bID and ask order maps. A new thread is created for each OrderBook
      * and a LimitOrderMatchingJob is executed on that thread to match bID and ask orders.
      */
-    private void startOrderMatchingJobs(){
+    private void startOrderMatchingJobs(OrderProcessingJob orderProcessingJob){
         for (int i=0;i<noOfStock;i++) {
             OrderBook orderBook = new OrderBook(String.format("%05d", i), "Stock " + i);
             orderBooks.put(String.format("%05d", i), orderBook);
-            new Thread(new LimitOrderMatchingJob(orderBook, orderObjMapper, marketDataQueue, resultingTradeQueue)).start();
+            new Thread(new LimitOrderMatchingJob(orderBook, orderObjMapper, marketDataQueue, resultingTradeQueue, orderProcessingJob)).start();
         }
     }
 
 
     public void startProcessingJobs() {
-        startOrderMatchingJobs();
+        OrderProcessingJob orderProcessingJob = new OrderProcessingJob(orderQueue, orderBooks, orderObjMapper);
+        startOrderMatchingJobs(orderProcessingJob);
         new Thread(new OrderProcessingJob(orderQueue, orderBooks, orderObjMapper)).start();
         new Thread(new MarketDataJob(marketDataQueue,fileChannelService)).start();
         new Thread(new ResultingTradeJob(resultingTradeQueue, this.fixTradeServerApp, fileChannelService)).start();
@@ -124,7 +126,7 @@ public class MatchingEngine extends Thread {
 //				+ order.getOrderType() + ":" + order.getBuyOrSell() + ":"
 //				+ order.getPrice() + ":" + order.getQuantity();
         String[] tokens = value.split(":");
-        return OrderPoolManager.requestOrderObj(tokens[0], tokens[1], tokens[2], OrderType.getByValue(tokens[3]), Action.getByValue(tokens[4]), Double.valueOf(tokens[5]),
+        return OrderPoolManager.requestOrderObj(tokens[0], tokens[1], tokens[2], OrderType.getByValue(tokens[3]), Action.getByValue(tokens[4]), new BigDecimal(tokens[5]),
                 Integer.parseInt(tokens[6]));
     }
 

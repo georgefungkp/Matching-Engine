@@ -17,7 +17,7 @@ public class RandomOrderRequestGenerator {
 	private static final Random randomSeed = new Random();
 
 
-	public static Order getNewLimitOrder(String stockNo, String brokerID, String clientOrdID, String direction, Double price, Integer qty) {
+	public static Order getNewLimitOrder(String stockNo, String brokerID, String clientOrdID, String direction, BigDecimal price, Integer qty) {
 
 		if (stockNo == null)
 			stockNo = String.format("%05d", randomSeed.nextInt(1,3) + 1);
@@ -30,8 +30,12 @@ public class RandomOrderRequestGenerator {
 			action = randomSeed.nextBoolean() ? Action.BUY : Action.SELL;
 		else
 			action = Action.getByValue(direction);
-		if (price == null)
-			price = BigDecimal.valueOf(randomSeed.nextDouble(0.1, 0.5) * 100).setScale(2, RoundingMode.HALF_UP).doubleValue();
+		
+		if (price == null) {
+			double randomPrice = randomSeed.nextDouble(0.1, 0.5) * 100;
+			price = BigDecimal.valueOf(randomPrice).setScale(2, RoundingMode.HALF_UP);
+		}
+
 		if (qty == null)
 			qty = randomSeed.nextInt(1,9) * 10;
 		OrderType orderType = OrderType.LIMIT;

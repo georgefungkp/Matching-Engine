@@ -13,6 +13,8 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import util.FileChannelService;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
@@ -33,10 +35,10 @@ public class TestObjectPool {
     private static final String BROKER_2 = "Broker 2";
     private static final String CLIENT_ORDER_1 = "001";
     private static final String CLIENT_ORDER_2 = "002";
-    private static final double PRICE_8_1 = 8.1;
-    private static final double PRICE_8_0 = 8.0;
-    private static final double PRICE_8_3 = 8.3;
-    private static final double PRICE_7_1 = 7.1;
+    private static final BigDecimal PRICE_8_1 = BigDecimal.valueOf(8.1).setScale(4, RoundingMode.HALF_UP);
+    private static final BigDecimal PRICE_8_0 = BigDecimal.valueOf(8.0).setScale(4, RoundingMode.HALF_UP);
+    private static final BigDecimal PRICE_8_3 = BigDecimal.valueOf(8.3).setScale(4, RoundingMode.HALF_UP);
+    private static final BigDecimal PRICE_7_1 = BigDecimal.valueOf(7.1).setScale(4, RoundingMode.HALF_UP);
     private static final int QUANTITY_300 = 300;
     private static final int QUANTITY_100 = 100;
     private static final int NO_OF_STOCKS = 2;
@@ -82,7 +84,7 @@ public class TestObjectPool {
     private void initializeTestSubjects() {
         orderProcessingJob = new OrderProcessingJob(orderQueue, orderBooks, orderObjMapper);
         OrderBook orderBook = orderBooks.get(STOCK_1);
-        orderMatching = new LimitOrderMatchingJob(orderBook, orderObjMapper, marketDataQueue, tradeDataQueue);
+        orderMatching = new LimitOrderMatchingJob(orderBook, orderObjMapper, marketDataQueue, tradeDataQueue, orderProcessingJob);
     }
 
     private void setupInitialOrders() {
@@ -123,10 +125,10 @@ public class TestObjectPool {
         // Given - initial state verification
         assertEquals(0, OrderPoolManager.getFreeTradeCount(STOCK_1));
         assertEquals(0, OrderPoolManager.getUsedTradeCount(STOCK_1));
-        
+
         // When - match orders
         orderMatching.matchTopOrder();
-        
+
         // Then - verify order objects are returned to pool
         assertEquals(2, OrderPoolManager.getFreeOrderCount(STOCK_1));
         assertEquals(0, OrderPoolManager.getUsedOrderCount(STOCK_1));
@@ -136,7 +138,7 @@ public class TestObjectPool {
         // When - create new order for same stock
         RandomOrderRequestGenerator.getNewLimitOrder(
                 STOCK_1, BROKER_2, CLIENT_ORDER_1, "S", PRICE_8_0, QUANTITY_100);
-        
+
         // Then - verify object reuse
         assertEquals(1, OrderPoolManager.getFreeOrderCount(STOCK_1));
         assertEquals(1, OrderPoolManager.getUsedOrderCount(STOCK_1));
@@ -144,7 +146,7 @@ public class TestObjectPool {
         // When - create order for different stock
         RandomOrderRequestGenerator.getNewLimitOrder(
                 STOCK_2, BROKER_2, CLIENT_ORDER_1, "S", PRICE_8_0, QUANTITY_100);
-        
+
         // Then - verify stock-specific pooling
         assertEquals(1, OrderPoolManager.getFreeOrderCount(STOCK_1));
         assertEquals(1, OrderPoolManager.getUsedOrderCount(STOCK_1));
@@ -158,20 +160,20 @@ public class TestObjectPool {
         // Given - mock file service behavior
         when(fileChannelService.writeTradeToFile(any(Trade.class), any(Path.class)))
                 .thenReturn(100);
-        
+
         // When - match orders to create trade
         orderMatching.matchTopOrder();
-        
+
         // Then - verify trade object creation
         assertEquals(0, OrderPoolManager.getFreeTradeCount(STOCK_1));
         assertEquals(1, OrderPoolManager.getUsedTradeCount(STOCK_1));
-        
+
         // When - process trade
         Trade testTrade = tradeDataQueue.take();
         verify(fileChannelService, never()).writeTradeToFile(any(), any());
-        
+
         resultingTradeJob.processTradeData(testTrade);
-        
+
         // Then - verify trade processing and object return
         verify(fileChannelService, times(1)).writeTradeToFile(eq(testTrade), any(Path.class));
         assertEquals(1, OrderPoolManager.getFreeTradeCount(STOCK_1));
@@ -179,12 +181,12 @@ public class TestObjectPool {
 
         // Given - setup for second trade
         setupSecondTradeScenario();
-        
+
         // When - create and process second trade
         orderMatching.matchTopOrder();
         Trade testTrade2 = tradeDataQueue.take();
         resultingTradeJob.processTradeData(testTrade2);
-        
+
         // Then - verify continued object reuse
         assertEquals(1, OrderPoolManager.getFreeTradeCount(STOCK_1));
         assertEquals(0, OrderPoolManager.getUsedTradeCount(STOCK_1));
@@ -192,8 +194,8 @@ public class TestObjectPool {
 
     private void setupSecondTradeScenario() {
         OrderBook orderBook = orderBooks.get(STOCK_1);
-        orderMatching = new LimitOrderMatchingJob(orderBook, orderObjMapper, marketDataQueue, tradeDataQueue);
-        
+        orderMatching = new LimitOrderMatchingJob(orderBook, orderObjMapper, marketDataQueue, tradeDataQueue, orderProcessingJob);
+
         Order bidOrder = RandomOrderRequestGenerator.getNewLimitOrder(
                 STOCK_1, BROKER_1, CLIENT_ORDER_1, "B", PRICE_8_3, QUANTITY_300);
         orderProcessingJob.putOrder(bidOrder);
@@ -208,11 +210,11 @@ public class TestObjectPool {
     void testRemoveOrder() {
         // Given - verify initial order book state
         assertNotNull(orderBooks.get(STOCK_1).getBidMap());
-        assertEquals(PRICE_8_1, orderBooks.get(STOCK_1).getBestBid());
-        
+        assertEquals(0, PRICE_8_1.compareTo(orderBooks.get(STOCK_1).getBestBid()));
+
         // When - remove order
         boolean removed = orderProcessingJob.removeOrder(BROKER_1, CLIENT_ORDER_1);
-        
+
         // Then - verify order removal
         assertTrue(removed);
         assertTrue(orderBooks.get(STOCK_1).getBidMap().isEmpty());
@@ -223,21 +225,21 @@ public class TestObjectPool {
     @DisplayName("Should successfully update order price and quantity")
     void testUpdateOrder() throws InterruptedException {
         // Given - verify initial state
-        assertEquals(PRICE_8_1, orderBooks.get(STOCK_1).getBestBid());
-        
+        assertEquals(0, PRICE_8_1.compareTo(orderBooks.get(STOCK_1).getBestBid()));
+
         // When - update order
         boolean updated = orderProcessingJob.updateOrder(BROKER_1, CLIENT_ORDER_1, PRICE_7_1, QUANTITY_100);
-        
+
         // Then - verify order update
         assertTrue(updated);
-        assertEquals(PRICE_7_1, orderBooks.get(STOCK_1).getBestBid());
+        assertEquals(0, PRICE_7_1.compareTo(orderBooks.get(STOCK_1).getBestBid()));
         assertEquals(1, orderBooks.get(STOCK_1).getBidMap().size());
         assertEquals(1, orderBooks.get(STOCK_1).getBidMap().get(PRICE_7_1).size());
         assertEquals(QUANTITY_100, orderBooks.get(STOCK_1).getBidMap().get(PRICE_7_1).getFirst().getQuantity().get());
-        
+
         // When - attempt matching after update
         orderMatching.matchTopOrder();
-        
+
         // Then - verify no trade occurs due to price mismatch
         assertTrue(tradeDataQueue.isEmpty());
     }

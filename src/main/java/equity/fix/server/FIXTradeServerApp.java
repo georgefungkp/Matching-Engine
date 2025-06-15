@@ -14,6 +14,7 @@ import quickfix.fix44.MessageCracker;
 import quickfix.fix44.NewOrderSingle;
 import util.SequenceGenerator;
 
+import java.math.BigDecimal;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static quickfix.field.OrdType.MARKET;
@@ -70,7 +71,7 @@ public class FIXTradeServerApp extends MessageCracker implements Application, Ru
         Action action = (newOrder.getSide().getValue() == BUY)? Action.BUY : Action.SELL;
         OrderType orderType = (newOrder.getOrdType().getValue() == MARKET)? OrderType.MARKET: OrderType.LIMIT;
         double quantity = newOrder.getOrderQty().getValue();
-        double price = newOrder.getPrice().getValue();
+        BigDecimal price = BigDecimal.valueOf(newOrder.getPrice().getValue());
 
         log.debug("Stock Code: {}", stockNo);
         log.debug("Buy or Sell: {}", action);
@@ -102,7 +103,7 @@ public class FIXTradeServerApp extends MessageCracker implements Application, Ru
      * @param execPrice the execution price
      */
     public void sendExecutionReport(SessionID sessionID, String clientOrdID, String stockNo, Side side,
-                                    ExecType execType, OrdStatus ordStatus, int filledQty, Double execPrice){
+                                    ExecType execType, OrdStatus ordStatus, int filledQty, BigDecimal execPrice){
         ExecutionReport executionReport = new ExecutionReport(
             new OrderID(clientOrdID), // Broker-assigned order ID
             new ExecID(String.valueOf(executionIDGenerator.getNextSequence())),  // Execution ID
@@ -111,7 +112,7 @@ public class FIXTradeServerApp extends MessageCracker implements Application, Ru
             side,
             new LeavesQty(0), // No remaining quantity
             new CumQty(filledQty), // Cumulative quantity filled
-            new AvgPx(execPrice) // Average price
+            new AvgPx(execPrice.doubleValue()) // Average price
         );
         executionReport.set(new Symbol(stockNo)); // replace with your symbol
         try {

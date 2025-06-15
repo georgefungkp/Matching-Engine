@@ -7,6 +7,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import util.SequenceGenerator;
 
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -38,14 +39,14 @@ public class OrderObjectPool {
      * @param quantity the quantity of the order
      * @return the Order object
      */
-    public synchronized Order makeANewOrder(String brokerID, String clientOrdID, OrderType orderType, Action direction, Double price, int quantity){
+    public synchronized Order makeANewOrder(String brokerID, String clientOrdID, OrderType orderType, Action direction, BigDecimal price, int quantity){
         Order newOrder;
         if (freeOrderList.isEmpty()){
             newOrder = new Order(stockNo, brokerID, clientOrdID, orderType, direction, price, quantity);
         }else{
             Iterator<Order> iterator = freeOrderList.iterator();
             newOrder = iterator.next();
-            newOrder.updateForReuse(brokerID, clientOrdID, orderType, direction, price, quantity);
+            newOrder.reset(brokerID, clientOrdID, orderType, direction, price, quantity);
             freeOrderList.remove(newOrder);
         }
         inUsedOrderList.add(newOrder);

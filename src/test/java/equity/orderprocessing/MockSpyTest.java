@@ -19,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import util.FileChannelService;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,7 +41,7 @@ public class MockSpyTest {
     private static final String BROKER_2 = "Broker 2";
     private static final String CLIENT_ORDER_1 = "001";
     private static final String CLIENT_ORDER_2 = "002";
-    private static final double ORDER_PRICE = 8.1;
+    private static final BigDecimal ORDER_PRICE = BigDecimal.valueOf(8.1);
     private static final int ORDER_QUANTITY = 300;
     private static final int EXPECTED_WRITE_RESULT = 100;
     private static final int NO_OF_STOCKS = 2;
@@ -86,7 +87,7 @@ public class MockSpyTest {
     private void initializeTestSubjects() {
         orderProcessingJob = new OrderProcessingJob(orderQueue, orderBooks, orderObjMapper);
         OrderBook orderBook = orderBooks.get(STOCK_1);
-        orderMatching = new LimitOrderMatchingJob(orderBook, orderObjMapper, marketDataQueue, tradeDataQueue);
+        orderMatching = new LimitOrderMatchingJob(orderBook, orderObjMapper, marketDataQueue, tradeDataQueue, orderProcessingJob);
     }
 
     private void setupInitialOrders() {

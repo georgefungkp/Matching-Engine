@@ -4,6 +4,8 @@ import equity.objectpooling.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -25,10 +27,11 @@ public class LimitOrderMatchingJob implements Runnable {
     private static final int PROCESSING_DELAY_MS = 1;
     private final String stockNo;
     private final OrderBook orderBook;
-    private final ConcurrentSkipListMap<Double, LinkedList<Order>> bidMap;
-    private final ConcurrentSkipListMap<Double, LinkedList<Order>> askMap;
+    private final ConcurrentSkipListMap<BigDecimal, LinkedList<Order>> bidMap;
+    private final ConcurrentSkipListMap<BigDecimal, LinkedList<Order>> askMap;
     private final LinkedBlockingQueue<MarketData> marketDataQueue;
     private final LinkedBlockingQueue<Trade> resultingTradeQueue;
+    private final OrderProcessingJob orderProcessingJob;
 
     private final ConcurrentHashMap<String, Order> orderObjMapper;
     private boolean isInterrupted = false;
@@ -37,14 +40,15 @@ public class LimitOrderMatchingJob implements Runnable {
     /**
      * Creates a new LimitOrderMatchingJob for the specified order book.
      *
-     * @param orderBook The order book containing bid and ask orders for a specific stock
-     * @param orderObjMapper Map that keeps track of all active orders by their unique identifier
-     * @param marketDataQueue Queue for publishing market data updates
+     * @param orderBook           The order book containing bid and ask orders for a specific stock
+     * @param orderObjMapper      Map that keeps track of all active orders by their unique identifier
+     * @param marketDataQueue     Queue for publishing market data updates
      * @param resultingTradeQueue Queue for publishing executed trades
      */
-    public LimitOrderMatchingJob(OrderBook orderBook, ConcurrentHashMap<String, Order> orderObjMapper, 
-                                LinkedBlockingQueue<MarketData> marketDataQueue, 
-                                LinkedBlockingQueue<Trade> resultingTradeQueue) {
+    public LimitOrderMatchingJob(OrderBook orderBook, ConcurrentHashMap<String, Order> orderObjMapper,
+                                 LinkedBlockingQueue<MarketData> marketDataQueue,
+                                 LinkedBlockingQueue<Trade> resultingTradeQueue,
+                                 OrderProcessingJob orderProcessingJob) {
         this.orderBook = orderBook;
         this.stockNo = orderBook.getStockNo();
         this.bidMap = orderBook.getBidMap();
@@ -52,14 +56,11 @@ public class LimitOrderMatchingJob implements Runnable {
         this.marketDataQueue = marketDataQueue;
         this.resultingTradeQueue = resultingTradeQueue;
         this.orderObjMapper = orderObjMapper;
+        this.orderProcessingJob = orderProcessingJob;
         log.debug("LimitOrderMatchingJob created for stock {}", stockNo);
     }
 
 
-
-    /**
-     * Runs this operation.
-     */
     /**
      * Main processing loop that continuously checks for and executes matching orders.
      * The thread pauses briefly between cycles to prevent CPU saturation.
@@ -107,6 +108,152 @@ public class LimitOrderMatchingJob implements Runnable {
         return askMap.lastKey().compareTo(bidMap.lastKey()) <= 0;
     }
 
+
+    /**
+     * Updates a single order after it has been partially or completely filled.
+     * Calculates new average price, updates filled quantity, remaining quantity, and timestamp.
+     *
+     * @param order      the order to update
+     * @param filledQty  the quantity filled in this trade
+     * @param tradePrice the execution price of the trade
+     * @param tradeTime  the time when the trade occurred
+     */
+    private void updateOrderAfterFill(Order order, int filledQty, BigDecimal tradePrice, ZonedDateTime tradeTime) {
+        // Get current values safely
+        BigDecimal currentAvgPrice = order.getOrderAvgPrice();
+        int currentFilledQty = order.getOrderFilledQty();
+        int currentQuantity = order.getQuantity().get();
+
+        // Calculate new values
+        int newFilledQty = currentFilledQty + filledQty;
+        int newRemainingQty = currentQuantity - filledQty;
+        BigDecimal newAvgPrice = calculateWeightedAveragePrice(currentAvgPrice, currentFilledQty, tradePrice, filledQty);
+
+        // Update order atomically
+        order.setFilledQty(newFilledQty);
+        order.setQuantity(newRemainingQty);
+        order.setRemainingQty(newRemainingQty);
+        order.setAvgPrice(newAvgPrice);
+
+        if (order.isMarketOrder()) {
+            updateBestPriceOfMarketOrder(order);
+        }
+        order.setLastEventDateTime(tradeTime);
+    }
+
+
+    /**
+     * Updates the price of a market order to the current best bid/ask price if needed.
+     * This is called after a partial fill to ensure the remaining quantity gets the latest market price.
+     *
+     * @param order the market order to potentially update
+     */
+    private void updateBestPriceOfMarketOrder(Order order) {
+        if (!order.isMarketOrder()) {
+            return; // Only process market orders
+        }
+
+        // Check if the market order needs a price update
+        if (!shouldUpdateMarketOrderPrice(order)) {
+            return;
+        }
+
+        // Get the new market price based on an order direction
+        BigDecimal newMarketPrice = order.isBuyOrder() ?
+                orderBook.getBestAsk() : orderBook.getBestBid();
+
+        // If no best price available, can't update
+        if (newMarketPrice == null) {
+            log.warn("Cannot update market order {}-{}: no best price available",
+                    order.getBrokerID(), order.getClientOrdID());
+            return;
+        }
+
+        // If price hasn't changed, no need to update
+        if (newMarketPrice.equals(order.getPrice().get())) {
+            return;
+        }
+
+        // Use OrderProcessingJob to update the order price
+        boolean updated = orderProcessingJob.updateOrder(
+                order.getBrokerID(),
+                order.getClientOrdID(),
+                newMarketPrice,
+                null // Don't change quantity, only price
+        );
+
+        if (updated) {
+            log.info("Updated market order {}-{} price from {} to {}",
+                    order.getBrokerID(), order.getClientOrdID(),
+                    order.getPrice().get(), newMarketPrice);
+        } else {
+            log.warn("Failed to update market order {}-{} price",
+                    order.getBrokerID(), order.getClientOrdID());
+        }
+    }
+
+
+    /**
+     * Determines if a market order's price should be updated.
+     * A market order should be updated if its current price is no longer the best available price.
+     *
+     * @param order the market order to check
+     * @return true if the order price should be updated, false otherwise
+     */
+    private boolean shouldUpdateMarketOrderPrice(Order order) {
+        BigDecimal currentPrice = order.getPrice().get();
+        if (currentPrice == null) {
+            return false;
+        }
+
+        if (order.isBuyOrder()) {
+            // For buy market orders, check if current price matches best ask
+            BigDecimal bestAsk = orderBook.getBestAsk();
+            return bestAsk != null && !currentPrice.equals(bestAsk);
+        } else {
+            // For sell market orders, check if current price matches best bid
+            BigDecimal bestBid = orderBook.getBestBid();
+            return bestBid != null && !currentPrice.equals(bestBid);
+        }
+    }
+
+
+    /**
+     * Calculates the weighted average price after a new fill.
+     * Formula: (previousTotal + newFillValue) / newTotalQuantity
+     *
+     * @param currentAvgPrice  the current average price
+     * @param currentFilledQty the current filled quantity
+     * @param tradePrice       the price of the new fill
+     * @param filledQty        the quantity of the new fill
+     * @return the new weighted average price
+     */
+    private BigDecimal calculateWeightedAveragePrice(BigDecimal currentAvgPrice, int currentFilledQty,
+                                                     BigDecimal tradePrice, int filledQty) {
+        // Precision constants
+        final int PRICE_SCALE = 4;
+        final RoundingMode PRICE_ROUNDING = RoundingMode.HALF_UP;
+
+        if (currentFilledQty == 0) {
+            // The first fill - average price is the trade price
+            return tradePrice.setScale(PRICE_SCALE, PRICE_ROUNDING);
+        }
+
+        // Calculate previous total value: currentAvgPrice * currentFilledQty
+        BigDecimal previousTotal = currentAvgPrice.multiply(BigDecimal.valueOf(currentFilledQty));
+
+        // Calculate new fill value: tradePrice * filledQty
+        BigDecimal newFillValue = tradePrice.multiply(BigDecimal.valueOf(filledQty));
+
+        // Calculate new total quantity
+        BigDecimal newTotalQty = BigDecimal.valueOf(currentFilledQty + filledQty);
+
+        // Calculate weighted average: (previousTotal + newFillValue) / newTotalQty
+        return previousTotal.add(newFillValue)
+                .divide(newTotalQty, PRICE_SCALE, PRICE_ROUNDING);
+    }
+
+
     /**
      * Matches the top bid and ask orders to execute a trade when conditions are met.
      * This method:
@@ -129,7 +276,7 @@ public class LimitOrderMatchingJob implements Runnable {
         Order topBid = null;
         Order topAsk = null;
         int filledQty = 0;
-        Double tradePrice = null;
+        BigDecimal tradePrice = null;
 
         // Acquire bid lock first to prevent deadlocks
         orderBook.getBidLock().writeLock().lock();
@@ -162,27 +309,20 @@ public class LimitOrderMatchingJob implements Runnable {
                 // Use ask price for the trade (price-time priority)
                 tradePrice = askMap.lastEntry().getKey();
 
-                // Update order quantities
-                topBid.setQuantity(topBid.getQuantity().get() - filledQty);
-                topBid.setLastEventDateTime(ZonedDateTime.now());
-                topAsk.setQuantity(topAsk.getQuantity().get() - filledQty);
-                topAsk.setLastEventDateTime(ZonedDateTime.now());
+                // Update newer average price, updates filled quantity, remaining quantity, and timestamp of the order
+                updateOrderAfterFill(topBid, filledQty, tradePrice, ZonedDateTime.now());
+                updateOrderAfterFill(topAsk, filledQty, tradePrice, ZonedDateTime.now());
 
-                // Create trade record
+                // Create a trade record
                 Trade trade = OrderPoolManager.requestTradeObj(
-                        topBid.getBrokerID(), 
-                        topAsk.getBrokerID(), 
-                        topBid.getClientOrdID(), 
-                        topAsk.getClientOrdID(),
-                        orderBook.getStockNo(), 
-                        tradePrice, 
-                        filledQty, 
+                        topBid, topAsk, orderBook.getStockNo(),
+                        tradePrice,
+                        filledQty,
                         LocalDateTime.now().toString());
 
-                // Add trade to queue
+                // Add trade to the queue
                 resultingTradeQueue.put(trade);
-
-                log.debug("Trade executed: {} shares of {} at ${} between {} and {}", 
+                log.debug("Trade executed: {} shares of {} at ${} between {} and {}",
                         filledQty, stockNo, tradePrice, topBid.getBrokerID(), topAsk.getBrokerID());
 
                 // Handle completed orders
@@ -206,9 +346,7 @@ public class LimitOrderMatchingJob implements Runnable {
         }
 
         // Send market data update if a trade was executed
-        if (tradePrice != null) {
-            sendMarketDataUpdate(tradePrice);
-        }
+        sendMarketDataUpdate(tradePrice);
     }
 
     /**
@@ -216,7 +354,7 @@ public class LimitOrderMatchingJob implements Runnable {
      * If the order quantity is zero, it is removed from the order list,
      * from the order map, and returned to the object pool.
      *
-     * @param order The order to check
+     * @param order     The order to check
      * @param orderList The list containing the order
      */
     private void processCompletedOrder(Order order, LinkedList<Order> orderList) {
@@ -238,10 +376,10 @@ public class LimitOrderMatchingJob implements Runnable {
      * @param tradePrice The price at which the last trade was executed
      * @throws InterruptedException if interrupted while adding to the queue
      */
-    private void sendMarketDataUpdate(Double tradePrice) throws InterruptedException {
+    private void sendMarketDataUpdate(BigDecimal tradePrice) throws InterruptedException {
         // Capture market data snapshot under read locks
-        Double bestBid;
-        Double bestAsk;
+        BigDecimal bestBid;
+        BigDecimal bestAsk;
         Timestamp timestamp = Timestamp.from(Instant.now());
 
         // Briefly acquire read locks to get current market state
@@ -275,7 +413,7 @@ public class LimitOrderMatchingJob implements Runnable {
         // Add to queue (might block, but we're not holding any locks)
         marketDataQueue.put(marketData);
 
-        log.debug("Market data published for stock {}: best bid={}, best ask={}, last trade={}", 
+        log.debug("Market data published for stock {}: best bid={}, best ask={}, last trade={}",
                 stockNo, bestBid, bestAsk, tradePrice);
     }
 }
