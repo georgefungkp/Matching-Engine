@@ -47,7 +47,6 @@ public class Client {
 		try {
 			executor.awaitTermination(10, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 		}
 
 	}

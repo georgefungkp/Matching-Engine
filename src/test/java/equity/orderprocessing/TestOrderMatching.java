@@ -2,6 +2,7 @@ package equity.orderprocessing;
 
 import equity.client.RandomOrderRequestGenerator;
 import equity.objectpooling.*;
+import equity.objectpooling.Order.Action;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -39,6 +40,8 @@ public class TestOrderMatching {
     private static final String CLIENT_SELL_ORDER_3 = "S003";
     private static final String CLIENT_SELL_ORDER_4 = "S004";
     private static final String CLIENT_BUY_ORDER_5 = "005";
+    private static final String BUY = Action.BUY.value;
+    private static final String SELL = Action.SELL.value;
     private static final BigDecimal PRICE_8_1 = BigDecimal.valueOf(8.1).setScale(4, RoundingMode.HALF_UP);;
     private static final BigDecimal PRICE_8_2 = BigDecimal.valueOf(8.2).setScale(4, RoundingMode.HALF_UP);;
     private static final BigDecimal PRICE_8_3 = BigDecimal.valueOf(8.3).setScale(4, RoundingMode.HALF_UP);;
@@ -100,8 +103,8 @@ public class TestOrderMatching {
 
     private void setupInitialOrderBook() {
         // Create limit orders for testing
-        Order bidOrder1 = createLimitOrder(STOCK_1, BROKER_1, CLIENT_BUY_INITIAL_ORDER_1, "B", PRICE_8_1, QUANTITY_300);
-        Order askOrder1 = createLimitOrder(STOCK_1, BROKER_2, CLIENT_SELL_INITIAL_ORDER_1, "S", PRICE_8_2, QUANTITY_200);
+        Order bidOrder1 = createLimitOrder(STOCK_1, BROKER_1, CLIENT_BUY_INITIAL_ORDER_1, BUY, PRICE_8_1, QUANTITY_300);
+        Order askOrder1 = createLimitOrder(STOCK_1, BROKER_2, CLIENT_SELL_INITIAL_ORDER_1, SELL, PRICE_8_2, QUANTITY_200);
         
         orderProcessingJob.putOrder(bidOrder1);
         orderProcessingJob.putOrder(askOrder1);
@@ -134,7 +137,7 @@ public class TestOrderMatching {
     @DisplayName("Should handle partial fills across multiple matching cycles")
     void testPartialFill() throws InterruptedException {
         // Given - add a large ask order that will partially fill against bid
-        Order largeBidOrder = createLimitOrder(STOCK_1, BROKER_3, CLIENT_BUY_ORDER_2, "B", PRICE_8_5, QUANTITY_1000);
+        Order largeBidOrder = createLimitOrder(STOCK_1, BROKER_3, CLIENT_BUY_ORDER_2, BUY, PRICE_8_5, QUANTITY_1000);
         orderProcessingJob.putOrder(largeBidOrder);
         
         // When - execute first matching cycle
@@ -144,7 +147,7 @@ public class TestOrderMatching {
         verifyFirstCycle(firstCycle);
         
         // Given - add another ask order for the second cycle
-        Order askOrder2 = createLimitOrder(STOCK_1, BROKER_4, CLIENT_SELL_ORDER_2, "S", PRICE_8_3, QUANTITY_400);
+        Order askOrder2 = createLimitOrder(STOCK_1, BROKER_4, CLIENT_SELL_ORDER_2, SELL, PRICE_8_3, QUANTITY_400);
         orderProcessingJob.putOrder(askOrder2);
         
         // When - execute the second matching cycle
@@ -256,14 +259,14 @@ public class TestOrderMatching {
     @DisplayName("Should handle large bid order consuming multiple ask levels")
     void testBigBidOrder() throws InterruptedException {
         // Given - multiple ask orders at different price levels
-        Order askOrder2 = createLimitOrder(STOCK_1, BROKER_2, CLIENT_SELL_ORDER_3, "S", PRICE_8_5, QUANTITY_300);
-        Order askOrder3 = createLimitOrder(STOCK_1, BROKER_2, CLIENT_SELL_ORDER_4, "S", PRICE_8_6, QUANTITY_400);
+        Order askOrder2 = createLimitOrder(STOCK_1, BROKER_2, CLIENT_SELL_ORDER_3, SELL, PRICE_8_5, QUANTITY_300);
+        Order askOrder3 = createLimitOrder(STOCK_1, BROKER_2, CLIENT_SELL_ORDER_4, SELL, PRICE_8_6, QUANTITY_400);
         
         orderProcessingJob.putOrder(askOrder2);
         orderProcessingJob.putOrder(askOrder3);
         
         // Add large bid order that will consume multiple ask levels
-        Order largeBidOrder = createLimitOrder(STOCK_1, BROKER_1, CLIENT_BUY_ORDER_5, "B", PRICE_8_6, QUANTITY_1000);
+        Order largeBidOrder = createLimitOrder(STOCK_1, BROKER_1, CLIENT_BUY_ORDER_5, BUY, PRICE_8_6, QUANTITY_1000);
         orderProcessingJob.putOrder(largeBidOrder);
         
         // When & Then - execute three matching cycles
@@ -304,8 +307,8 @@ public class TestOrderMatching {
         // Given - clear existing orders and create a perfect match scenario
         clearTestData();
         
-        Order bidOrder = createLimitOrder(STOCK_1, BROKER_1, CLIENT_BUY_ORDER_2, "B", PRICE_8_2, QUANTITY_200);
-        Order askOrder = createLimitOrder(STOCK_1, BROKER_2, CLIENT_SELL_ORDER_2, "S", PRICE_8_1, QUANTITY_300);
+        Order bidOrder = createLimitOrder(STOCK_1, BROKER_1, CLIENT_BUY_ORDER_2, BUY, PRICE_8_2, QUANTITY_200);
+        Order askOrder = createLimitOrder(STOCK_1, BROKER_2, CLIENT_SELL_ORDER_2, SELL, PRICE_8_1, QUANTITY_300);
         
         orderProcessingJob.putOrder(bidOrder);
         orderProcessingJob.putOrder(askOrder);
@@ -344,7 +347,7 @@ public class TestOrderMatching {
 
     private OrderBook createOrderBookWithBidOnly() {
         OrderBook orderBook = new OrderBook(STOCK_2, "Bid Only Stock");
-        Order bidOrder = createLimitOrder(STOCK_2, BROKER_1, CLIENT_BUY_ORDER_3, "B", PRICE_8_1, QUANTITY_300);
+        Order bidOrder = createLimitOrder(STOCK_2, BROKER_1, CLIENT_BUY_ORDER_3, BUY, PRICE_8_1, QUANTITY_300);
         
         LinkedList<Order> bidQueue = new LinkedList<>();
         bidQueue.add(bidOrder);
@@ -355,7 +358,7 @@ public class TestOrderMatching {
 
     private OrderBook createOrderBookWithAskOnly() {
         OrderBook orderBook = new OrderBook(STOCK_2, "Ask Only Stock");
-        Order askOrder = createLimitOrder(STOCK_2, BROKER_2, CLIENT_BUY_ORDER_4, "S", PRICE_8_2, QUANTITY_200);
+        Order askOrder = createLimitOrder(STOCK_2, BROKER_2, CLIENT_BUY_ORDER_4, SELL, PRICE_8_2, QUANTITY_200);
         
         LinkedList<Order> askQueue = new LinkedList<>();
         askQueue.add(askOrder);

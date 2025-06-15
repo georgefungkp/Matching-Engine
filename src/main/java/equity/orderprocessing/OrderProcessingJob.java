@@ -125,8 +125,9 @@ public class OrderProcessingJob implements Runnable {
             // Add to the order map for lookup by ID
             orderObjMapper.put(order.getBrokerID() + "-" + order.getClientOrdID(), order);
 
-            log.info("Added order: {}-{} {} {} @ ${} x {}", 
-                    order.getBrokerID(), 
+            log.info("Added {} order: {}-{} {} {} @ ${} x {}",
+                    Action.getByValue(order.getBuyOrSell()),
+                    order.getBrokerID(),
                     order.getClientOrdID(),
                     order.getBuyOrSell(), 
                     order.getOrderType(), 
