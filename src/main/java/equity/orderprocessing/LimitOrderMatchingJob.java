@@ -273,10 +273,10 @@ public class LimitOrderMatchingJob implements Runnable {
         }
 
         // Variables to store trade data
-        Order topBid = null;
-        Order topAsk = null;
-        int filledQty = 0;
-        BigDecimal tradePrice = null;
+        Order topBid;
+        Order topAsk;
+        int filledQty;
+        BigDecimal tradePrice;
 
         // Acquire bid lock first to prevent deadlocks
         orderBook.getBidLock().writeLock().lock();

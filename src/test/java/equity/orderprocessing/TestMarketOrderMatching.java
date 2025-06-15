@@ -33,11 +33,11 @@ public class TestMarketOrderMatching {
     private static final String CLIENT_ORDER_3 = "003";
     
     // Price Constants
-    private static final BigDecimal PRICE_8_0 = BigDecimal.valueOf(8.0).setScale(4, RoundingMode.HALF_UP);;
-    private static final BigDecimal PRICE_8_1 = BigDecimal.valueOf(8.1).setScale(4, RoundingMode.HALF_UP);;
-    private static final BigDecimal PRICE_8_2 = BigDecimal.valueOf(8.2).setScale(4, RoundingMode.HALF_UP);;
-    private static final BigDecimal PRICE_8_3 = BigDecimal.valueOf(8.3).setScale(4, RoundingMode.HALF_UP);;
-    private static final BigDecimal PRICE_8_5 = BigDecimal.valueOf(8.5).setScale(4, RoundingMode.HALF_UP);;
+    private static final BigDecimal PRICE_8_0 = BigDecimal.valueOf(8.0).setScale(4, RoundingMode.HALF_UP);
+    private static final BigDecimal PRICE_8_1 = BigDecimal.valueOf(8.1).setScale(4, RoundingMode.HALF_UP);
+    private static final BigDecimal PRICE_8_2 = BigDecimal.valueOf(8.2).setScale(4, RoundingMode.HALF_UP);
+    private static final BigDecimal PRICE_8_3 = BigDecimal.valueOf(8.3).setScale(4, RoundingMode.HALF_UP);
+    private static final BigDecimal PRICE_8_5 = BigDecimal.valueOf(8.5).setScale(4, RoundingMode.HALF_UP);
     
     // Quantity Constants  
     private static final int QUANTITY_100 = 100;
@@ -243,7 +243,7 @@ public class TestMarketOrderMatching {
             // Should fill completely against best bid (8.2)
             MarketOrderMatchResult result = executeMarketOrderMatch();
             assertEquals(0, PRICE_8_2.compareTo(result.trade.getExecutedPrice()), "Should execute at best bid price");
-            assertEquals(Math.min(orderSize, QUANTITY_300), result.trade.getExecutedQty(),
+            assertEquals(orderSize, result.trade.getExecutedQty(),
                     "Should execute available quantity");
         } else {
             // Should require multiple fills

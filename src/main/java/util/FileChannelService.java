@@ -1,6 +1,5 @@
 package util;
 
-import equity.externalparties.MarketDataJob;
 import equity.objectpooling.MarketData;
 import equity.objectpooling.Order;
 import equity.objectpooling.Trade;
@@ -19,7 +18,7 @@ import java.util.LinkedList;
 import java.util.Map.Entry;
 
 public class FileChannelService {
-    private static final Logger log = LogManager.getLogger(MarketDataJob.class);
+    private static final Logger log = LogManager.getLogger(FileChannelService.class);
 
     public int writeTradeToFile(Trade tradeData, Path path) throws IOException {
         // Stock No, Bid Broker Id, Bid Order id, Sell Broker Id, Sell order id, Executed Price, Qty, Executed Time\
