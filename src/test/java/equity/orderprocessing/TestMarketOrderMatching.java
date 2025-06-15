@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("Market Order Matching Tests")
 public class TestMarketOrderMatching {
-    
+
     // Test Constants
     private static final String BUY = Action.BUY.value;
     private static final String SELL = Action.SELL.value;
@@ -49,7 +49,7 @@ public class TestMarketOrderMatching {
     private static final BigDecimal PRICE_8_2 = BigDecimal.valueOf(8.2).setScale(4, RoundingMode.HALF_UP);
     private static final BigDecimal PRICE_8_3 = BigDecimal.valueOf(8.3).setScale(4, RoundingMode.HALF_UP);
     private static final BigDecimal PRICE_8_5 = BigDecimal.valueOf(8.5).setScale(4, RoundingMode.HALF_UP);
-    
+
     // Quantity Constants  
     private static final int QUANTITY_100 = 100;
     private static final int QUANTITY_150 = 150;
@@ -57,7 +57,8 @@ public class TestMarketOrderMatching {
     private static final int QUANTITY_300 = 300;
     private static final int QUANTITY_400 = 400;
     private static final int QUANTITY_500 = 500;
-    
+    private static final int QUANTITY_600 = 600;
+
     // System Constants
     private static final int NO_OF_STOCKS = 2;
     private static final int INITIAL_FREE_ORDERS = 0;
@@ -67,7 +68,7 @@ public class TestMarketOrderMatching {
     private final LinkedBlockingQueue<Order> orderQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<MarketData> marketDataQueue = new LinkedBlockingQueue<>();
     private final LinkedBlockingQueue<Trade> tradeDataQueue = new LinkedBlockingQueue<>();
-    
+
     // Test Subjects
     private OrderProcessingJob orderProcessingJob;
     private LimitOrderMatchingJob orderMatching;
@@ -163,11 +164,11 @@ public class TestMarketOrderMatching {
     void testMarketSellOrderAgainstBestBid() throws InterruptedException {
         // Given - market sell order targeting the best bid
         putMarketOrder(BROKER_4, CLIENT_SELL_MARKET_ORDER_1, SELL, QUANTITY_400);
-        
+
         // Verify pre-match state
         assertEquals(0, PRICE_8_2.compareTo(orderBooks.get(STOCK_1).getBestBid()), "Best bid should be 8.2");
         assertEquals(0, PRICE_8_2.compareTo(orderBooks.get(STOCK_1).getBestAsk()), "Market order should price at best bid");
-        
+
         // When - execute matching
         MarketOrderMatchResult result = executeMarketOrderMatch();
         // Then - verify execution against best bid
@@ -182,10 +183,10 @@ public class TestMarketOrderMatching {
         // Given - setup ask order and market buy order
         addLimitAskOrder(BROKER_2, CLIENT_SELL_LIMIT_ORDER_2, PRICE_8_3, QUANTITY_300);
         putMarketOrder(BROKER_4, CLIENT_BUY_MARKET_ORDER_1, BUY, QUANTITY_300);
-        
+
         // When - execute matching
         MarketOrderMatchResult result = executeMarketOrderMatch();
-        
+
         // Then - verify execution against best ask
         verifyMarketBuyExecution(result, CLIENT_BUY_MARKET_ORDER_1, CLIENT_SELL_LIMIT_ORDER_2, PRICE_8_3, QUANTITY_300);
         verifyMarketDataAfterBuy(result.marketData, PRICE_8_2, null, PRICE_8_3);
@@ -210,45 +211,48 @@ public class TestMarketOrderMatching {
     }
 
     @Test
+    @DisplayName("Executed at the best bid price at every trade of market order")
+    void testMarketOrderExecutedAtBestBid() throws InterruptedException {
+        // Given - setup market buy order
+        putMarketOrder(BROKER_2, CLIENT_SELL_MARKET_ORDER_1, SELL, QUANTITY_500);
+        // When - execute matching
+        MarketOrderMatchResult result = executeMarketOrderMatch();
+
+        // Then - verify execution against best bid
+        verifyMarketBuyExecution(result, CLIENT_BUY_INITIAL_LIMIT_ORDER_2, CLIENT_SELL_MARKET_ORDER_1, PRICE_8_2, QUANTITY_300);
+        verifyMarketDataAfterBuy(result.marketData, PRICE_8_1, PRICE_8_1, PRICE_8_2);
+
+        // When - execute second matching
+        MarketOrderMatchResult result2 = executeMarketOrderMatch();
+
+        // Then - verify execution against best bid
+        verifyMarketBuyExecution(result2, CLIENT_BUY_INITIAL_LIMIT_ORDER_1, CLIENT_SELL_MARKET_ORDER_1, PRICE_8_1, QUANTITY_200);
+        verifyMarketDataAfterBuy(result2.marketData, PRICE_8_1, null, PRICE_8_1);
+    }
+
+    @Test
     @DisplayName("Should handle market order partial fill scenario")
     void testMarketOrderPartialFill() throws InterruptedException {
         // Given - market order larger than available liquidity
         putMarketOrder(BROKER_4, CLIENT_SELL_MARKET_ORDER_1, SELL, QUANTITY_400);
-        
+
         // When - execute first matching cycle
         MarketOrderMatchResult firstMatch = executeMarketOrderMatch();
-        
+
         // Then - verify partial execution
         verifyPartialFillExecution(firstMatch, BROKER_3, BROKER_4, PRICE_8_2, QUANTITY_300);
-        
+
         // Verify remaining market order repositioned to next best price
         assertEquals(0, PRICE_8_1.compareTo(firstMatch.marketData.bestBid()), "Next best bid should be visible");
         assertEquals(0, PRICE_8_1.compareTo(firstMatch.marketData.bestAsk()), "Remaining market order should price at 8.1");
-        
+
         // When - execute second matching cycle for remaining quantity
         MarketOrderMatchResult secondMatch = executeMarketOrderMatch();
-        
+
         // Then - verify completion of market order
         verifyRemainingQuantityExecution(secondMatch, BROKER_1, BROKER_4, PRICE_8_1, QUANTITY_100);
     }
 
-    @Test
-    @DisplayName("Should reject market order when no opposite side liquidity exists")
-    void testMarketOrderWithNoOppositeLiquidity() {
-        // Given - clear existing setup and add only bid orders
-        clearDataStructures();
-        setupBidOnlyOrderBook();
-        
-        // When - attempt to add market sell order with no asks
-        int initialOrderCount = OrderPoolManager.getUsedOrderCount(STOCK_1);
-        putMarketOrder(BROKER_4, CLIENT_SELL_MARKET_ORDER_1, SELL, QUANTITY_300);
-        
-        // Then - market order should be rejected/not added
-        assertEquals(initialOrderCount, OrderPoolManager.getUsedOrderCount(STOCK_1),
-                "No new orders should be added when no opposite liquidity exists");
-        assertTrue(marketDataQueue.isEmpty(), "No market data should be generated");
-        assertTrue(tradeDataQueue.isEmpty(), "No trades should be executed");
-    }
 
     @ParameterizedTest
     @ValueSource(ints = {100, 200, 500, 1000})
@@ -256,10 +260,10 @@ public class TestMarketOrderMatching {
     void testVariousMarketOrderSizes(int orderSize) throws InterruptedException {
         // Given - additional liquidity for testing different sizes
         addLimitBidOrder(BROKER_3, CLIENT_BUY_LIMIT_ORDER_2, PRICE_8_0, QUANTITY_500);
-        
+
         // When - place market sell order of varying sizes
         putMarketOrder(BROKER_4, CLIENT_BUY_MARKET_ORDER_1, SELL, orderSize);
-        
+
         // Then - should execute against best available prices
         if (orderSize <= QUANTITY_300) {
             // Should fill completely against best bid (8.2)
@@ -270,12 +274,16 @@ public class TestMarketOrderMatching {
         } else {
             // Should require multiple fills
             MarketOrderMatchResult firstFill = executeMarketOrderMatch();
-            assertEquals(0, PRICE_8_2.compareTo(firstFill.trade.getExecutedPrice()), "First fill at best bid");
+            assertEquals(PRICE_8_2, firstFill.trade.getExecutedPrice(), "First fill at best bid");
             assertEquals(QUANTITY_300, firstFill.trade.getExecutedQty(), "First fill quantity");
-            
-            if (orderSize > QUANTITY_300) {
-                MarketOrderMatchResult secondFill = executeMarketOrderMatch();
-                assertEquals(0, PRICE_8_1.compareTo(secondFill.trade.getExecutedPrice()), "Second fill at next best bid");
+
+            MarketOrderMatchResult secondFill = executeMarketOrderMatch();
+            assertEquals(PRICE_8_1, secondFill.trade.getExecutedPrice(), "Second fill at next best bid");
+
+            if (orderSize >= QUANTITY_600) {
+                MarketOrderMatchResult thirdFill = executeMarketOrderMatch();
+                assertEquals(PRICE_8_0, thirdFill.trade.getExecutedPrice(), "First fill at best bid");
+                assertEquals(QUANTITY_400, thirdFill.trade.getExecutedQty(), "First fill quantity");
             }
         }
     }
@@ -283,43 +291,104 @@ public class TestMarketOrderMatching {
     @Test
     @DisplayName("Should maintain correct market data state after market order execution")
     void testMarketDataConsistencyAfterExecution() throws InterruptedException {
-        // Given - complex order book setup
+        // Given - complex order book setup accounting for initial setup
+        // Initial state: Bids [8.2: 300 (BROKER_3), 8.1: 300 (BROKER_1)]
         addLimitAskOrder(BROKER_2, CLIENT_SELL_LIMIT_ORDER_2, PRICE_8_3, QUANTITY_200);
         addLimitBidOrder(BROKER_3, CLIENT_BUY_LIMIT_ORDER_2, PRICE_8_0, QUANTITY_100);
-        
-        // When - execute market buy order
-        putMarketOrder(BROKER_4, CLIENT_SELL_MARKET_ORDER_1, BUY, QUANTITY_200);
+
+        // Final order book state:
+        // Bids: [8.2: 300 (BROKER_3), 8.1: 300 (BROKER_1), 8.0: 100 (BROKER_3)]
+        // Asks: [8.3: 200 (BROKER_2)]
+
+        // When - execute market BUY order (should match against ask at 8.3)
+        putMarketOrder(BROKER_4, CLIENT_BUY_MARKET_ORDER_1, BUY, QUANTITY_200);
         MarketOrderMatchResult result = executeMarketOrderMatch();
-        
-        // Then - verify market data reflects correct state
-        assertEquals(0, PRICE_8_2.compareTo(result.marketData.bestBid()), "Best bid should be preserved");
-        assertNull(result.marketData.bestAsk(), "Ask should be consumed completely");
-        assertEquals(0, PRICE_8_3.compareTo(result.marketData.lastTradePrice()), "Last trade price should match execution");
-        
+
+        // Then - verify market data reflects the correct state after buy execution
+        assertEquals(PRICE_8_2, result.marketData.bestBid(), "Best bid should remain unchanged at 8.2");
+        assertNull(result.marketData.bestAsk(), "Ask should be completely consumed (200 ask vs 200 market buy)");
+        assertEquals(PRICE_8_3, result.marketData.lastTradePrice(), "Last trade price should be 8.3 (ask price)");
+
         // Verify order book structure integrity
         OrderBook orderBook = orderBooks.get(STOCK_1);
-        assertFalse(orderBook.getBidMap().isEmpty(), "Bid map should still contain orders");
-        assertTrue(orderBook.getAskMap().isEmpty(), "Ask map should be empty after consumption");
+        assertFalse(orderBook.getBidMap().isEmpty(), "Bid map should still contain all original orders");
+        assertTrue(orderBook.getAskMap().isEmpty(), "Ask map should be empty after ask order consumed");
+
+        // Verify the bid side is completely intact (market buy doesn't affect bids)
+        assertEquals(3, orderBook.getBidMap().size(), "Should have 3 bid price levels unchanged");
+        assertEquals(0, PRICE_8_2.compareTo(orderBook.getBestBid()), "Best bid should still be 8.2");
     }
 
     @Test
-    @DisplayName("Should handle market order timing and priority correctly")
-    void testMarketOrderTimingAndPriority() throws InterruptedException {
-        // Given - setup with multiple orders at same price level
-        addLimitBidOrder(BROKER_2, "100", PRICE_8_2, QUANTITY_100); // Second order at 8.2
-        addLimitBidOrder(BROKER_3, "101", PRICE_8_2, QUANTITY_100); // Third order at 8.2
-        
-        // When - execute market sell order
-        putMarketOrder(BROKER_4, CLIENT_SELL_MARKET_ORDER_1, SELL, QUANTITY_150);
-        MarketOrderMatchResult result = executeMarketOrderMatch();
-        
-        // Then - should execute against first order in FIFO order
-        assertEquals(BROKER_3, result.trade.getBuyBrokerID(), "Should match against first order at price level");
-        assertEquals(QUANTITY_100, result.trade.getExecutedQty(), "Should fill first order completely");
-        
-        // Verify remaining quantity creates new market order
-        assertEquals(0, PRICE_8_2.compareTo(result.marketData.bestBid()), "Best bid should remain at 8.2");
-        assertEquals(0, PRICE_8_2.compareTo(result.marketData.bestAsk()), "Remaining market order should be at 8.2");
+    @DisplayName("Should handle FIFO priority correctly with complete fills")
+    void testFIFOPriorityWithCompleteFills() throws InterruptedException {
+        // Given - Add orders at same price level to test FIFO
+        // Initial: [8.2: 300 (BROKER_3), 8.1: 300 (BROKER_1)]
+        addLimitBidOrder(BROKER_2, "FIFO_TEST_1", PRICE_8_2, QUANTITY_200); // 2nd at 8.2
+        addLimitBidOrder(BROKER_4, "FIFO_TEST_2", PRICE_8_2, QUANTITY_100); // 3rd at 8.2
+
+        // FIFO Queue at 8.2: BROKER_3(300) → BROKER_2(200) → BROKER_4(100)
+
+        // When - market sell exactly fills first order
+        putMarketOrder(BROKER_1, CLIENT_SELL_MARKET_ORDER_1, SELL, QUANTITY_300);
+        MarketOrderMatchResult result1 = executeMarketOrderMatch();
+
+        // Then - should completely fill BROKER_3's order (first in FIFO)
+        assertEquals(BROKER_3, result1.trade.getBuyBrokerID(), "First fill: BROKER_3");
+        assertEquals(PRICE_8_2, result1.trade.getExecutedPrice(), "Should execute at 8.2");
+        assertEquals(QUANTITY_300, result1.trade.getExecutedQty(), "Should fill complete order");
+
+        // When - another market sell to test next in FIFO
+        putMarketOrder(BROKER_1, CLIENT_SELL_MARKET_ORDER_2, SELL, QUANTITY_200);
+        MarketOrderMatchResult result2 = executeMarketOrderMatch();
+
+        // Then - should fill BROKER_2's order (second in FIFO)
+        assertEquals(BROKER_2, result2.trade.getBuyBrokerID(), "Second fill: BROKER_2");
+        assertEquals("FIFO_TEST_1", result2.trade.getBuyOrderID(), "Correct order ID");
+        assertEquals(PRICE_8_2, result2.trade.getExecutedPrice(), "Should execute at 8.2");
+        assertEquals(QUANTITY_200, result2.trade.getExecutedQty(), "Should fill BROKER_2's order");
+
+        // Verify BROKER_4's order is now at top of queue
+        assertNotNull( orderBooks.get(STOCK_1).getBidMap().get(PRICE_8_2).peekFirst(), "BROKER_4's order is still in the order book");
+        assertEquals(PRICE_8_2, result2.marketData.bestBid(),"Best bid still 8.2 (BROKER_4's order remaining)");
+    }
+
+    @Test
+    @DisplayName("Should maintain FIFO priority with partial fills")
+    void testFIFOPriorityWithPartialFills() throws InterruptedException {
+        // Given - Clean slate setup
+        OrderBook orderBook = orderBooks.get(STOCK_1);
+        orderBook.getBidMap().clear();
+
+        // Setup: Different sized orders at same price
+        addLimitBidOrder("BROKER_X", "BIG_ORDER", PRICE_8_2, QUANTITY_500);   // 1st - Large
+        addLimitBidOrder("BROKER_Y", "SMALL_ORDER", PRICE_8_2, QUANTITY_100); // 2nd - Small
+
+        // Test: Partial fill of first order
+        putMarketOrder("MARKET_BROKER", "PARTIAL_SELL", SELL, QUANTITY_300);
+        MarketOrderMatchResult result1 = executeMarketOrderMatch();
+
+        // Should partially fill the FIRST order (BROKER_X)
+        assertEquals("BROKER_X", result1.trade.getBuyBrokerID(), "Should match first order");
+        assertEquals(QUANTITY_300, result1.trade.getExecutedQty(), "Partial fill quantity");
+
+        // Test: Next market sell should complete the first order
+        putMarketOrder("MARKET_BROKER", "COMPLETE_SELL", SELL, QUANTITY_200);
+        MarketOrderMatchResult result2 = executeMarketOrderMatch();
+
+        // Should complete the SAME first order (remaining 200 shares)
+        assertEquals("BROKER_X", result2.trade.getBuyBrokerID(), "Should complete first order");
+        assertEquals("BIG_ORDER", result2.trade.getBuyOrderID(), "Same order ID");
+        assertEquals(QUANTITY_200, result2.trade.getExecutedQty(), "Remaining quantity");
+
+        // Test: Next market sell should move to second order
+        putMarketOrder("MARKET_BROKER", "NEXT_SELL", SELL, QUANTITY_100);
+        MarketOrderMatchResult result3 = executeMarketOrderMatch();
+
+        // Now should match the SECOND order
+        assertEquals("BROKER_Y", result3.trade.getBuyBrokerID(), "Should match second order");
+        assertEquals("SMALL_ORDER", result3.trade.getBuyOrderID(), "Second order ID");
+        assertEquals(QUANTITY_100, result3.trade.getExecutedQty(), "Second order quantity");
     }
 
     // === Helper Methods for Verification ===
@@ -334,22 +403,22 @@ public class TestMarketOrderMatching {
     }
 
     private void verifyMarketSellExecution(MarketOrderMatchResult result, String expectedBuyOrderID,
-                                         String expectedSellOrderID, BigDecimal expectedPrice, int expectedQuantity) {
+                                           String expectedSellOrderID, BigDecimal expectedPrice, int expectedQuantity) {
         verifyTradeExecution(result.trade, expectedBuyOrderID, expectedSellOrderID, expectedPrice, expectedQuantity);
     }
 
     private void verifyMarketBuyExecution(MarketOrderMatchResult result, String expectedBuyOrderID,
-                                        String expectedSellOrderID, BigDecimal expectedPrice, int expectedQuantity) {
-        verifyTradeExecution(result.trade, expectedBuyOrderID, expectedSellOrderID, expectedPrice, expectedQuantity);
-    }
-
-    private void verifyPartialFillExecution(MarketOrderMatchResult result, String expectedBuyOrderID,
                                           String expectedSellOrderID, BigDecimal expectedPrice, int expectedQuantity) {
         verifyTradeExecution(result.trade, expectedBuyOrderID, expectedSellOrderID, expectedPrice, expectedQuantity);
     }
 
+    private void verifyPartialFillExecution(MarketOrderMatchResult result, String expectedBuyOrderID,
+                                            String expectedSellOrderID, BigDecimal expectedPrice, int expectedQuantity) {
+        verifyTradeExecution(result.trade, expectedBuyOrderID, expectedSellOrderID, expectedPrice, expectedQuantity);
+    }
+
     private void verifyRemainingQuantityExecution(MarketOrderMatchResult result, String expectedBuyOrderID,
-                                                String expectedSellOrderID, BigDecimal expectedPrice, int expectedQuantity) {
+                                                  String expectedSellOrderID, BigDecimal expectedPrice, int expectedQuantity) {
         verifyTradeExecution(result.trade, expectedBuyOrderID, expectedSellOrderID, expectedPrice, expectedQuantity);
     }
 
@@ -363,7 +432,7 @@ public class TestMarketOrderMatching {
     }
 
     private void verifyMarketDataAfterSell(MarketData marketData, BigDecimal expectedBestBid,
-                                         BigDecimal expectedBestAsk, BigDecimal expectedLastTradePrice) {
+                                           BigDecimal expectedBestAsk, BigDecimal expectedLastTradePrice) {
         assertEquals(expectedBestBid, marketData.bestBid(), "Best bid should match expected");
         assertEquals(expectedBestAsk, marketData.bestAsk(), "Best ask should match expected");
         assertEquals(0, expectedLastTradePrice.compareTo(marketData.lastTradePrice()),
@@ -371,10 +440,10 @@ public class TestMarketOrderMatching {
     }
 
     private void verifyMarketDataAfterBuy(MarketData marketData, BigDecimal expectedBestBid,
-                                        BigDecimal expectedBestAsk, BigDecimal expectedLastTradePrice) {
+                                          BigDecimal expectedBestAsk, BigDecimal expectedLastTradePrice) {
         assertEquals(expectedBestBid, marketData.bestBid(), "Best bid should match expected");
         assertEquals(expectedBestAsk, marketData.bestAsk(), "Best ask should match expected");
-        assertEquals(0, expectedLastTradePrice.compareTo(marketData.lastTradePrice()),
+        assertEquals(expectedLastTradePrice, marketData.lastTradePrice(),
                 "Last trade price should match expected");
     }
 

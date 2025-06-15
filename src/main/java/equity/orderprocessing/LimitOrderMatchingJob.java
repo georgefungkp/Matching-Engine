@@ -134,10 +134,6 @@ public class LimitOrderMatchingJob implements Runnable {
         order.setQuantity(newRemainingQty);
         order.setRemainingQty(newRemainingQty);
         order.setAvgPrice(newAvgPrice);
-
-        if (order.isMarketOrder()) {
-            updateBestPriceOfMarketOrder(order);
-        }
         order.setLastEventDateTime(tradeTime);
     }
 
@@ -149,10 +145,6 @@ public class LimitOrderMatchingJob implements Runnable {
      * @param order the market order to potentially update
      */
     private void updateBestPriceOfMarketOrder(Order order) {
-        if (!order.isMarketOrder()) {
-            return; // Only process market orders
-        }
-
         // Check if the market order needs a price update
         if (!shouldUpdateMarketOrderPrice(order)) {
             return;
@@ -169,7 +161,7 @@ public class LimitOrderMatchingJob implements Runnable {
             return;
         }
 
-        // If price hasn't changed, no need to update
+        // If the price hasn't changed, no need to update
         if (newMarketPrice.equals(order.getPrice().get())) {
             return;
         }
@@ -202,9 +194,11 @@ public class LimitOrderMatchingJob implements Runnable {
      */
     private boolean shouldUpdateMarketOrderPrice(Order order) {
         BigDecimal currentPrice = order.getPrice().get();
-        if (currentPrice == null) {
+        if (currentPrice == null)
             return false;
-        }
+
+        if (order.getQuantity().get() == 0)
+            return false;
 
         if (order.isBuyOrder()) {
             // For buy market orders, check if current price matches best ask
@@ -329,13 +323,11 @@ public class LimitOrderMatchingJob implements Runnable {
                 processCompletedOrder(topBid, bestBidOrderList);
                 processCompletedOrder(topAsk, bestAskOrderList);
 
-                // Clean up empty price levels
-                if (bestAskOrderList.isEmpty()) {
-                    askMap.pollLastEntry();
-                }
-                if (bestBidOrderList.isEmpty()) {
-                    bidMap.pollLastEntry();
-                }
+                if (topBid.isMarketOrder())
+                    updateBestPriceOfMarketOrder(topBid);
+                if (topAsk.isMarketOrder())
+                    updateBestPriceOfMarketOrder(topAsk);
+
             } finally {
                 // Always release ask lock before bid lock
                 orderBook.getAskLock().writeLock().unlock();
@@ -367,6 +359,13 @@ public class LimitOrderMatchingJob implements Runnable {
                 log.debug("Completed order removed: {}", orderKey);
             }
         }
+        // Clean up empty price levels
+        if (orderList.isEmpty())
+            if (order.isBuyOrder()) {
+                bidMap.pollLastEntry();
+            }else{
+                askMap.pollLastEntry();
+            }
     }
 
     /**
