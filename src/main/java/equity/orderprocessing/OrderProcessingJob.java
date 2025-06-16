@@ -2,7 +2,6 @@ package equity.orderprocessing;
 
 import equity.objectpooling.Order;
 import equity.objectpooling.Order.Action;
-import equity.objectpooling.Order.OrderType;
 import equity.objectpooling.OrderBook;
 import equity.objectpooling.OrderPoolManager;
 import org.apache.logging.log4j.LogManager;
@@ -151,9 +150,10 @@ public class OrderProcessingJob implements Runnable {
      *
      * @param brokerID the broker ID of the order to be removed
      * @param clientOrdId the client order ID of the order to be removed
+     * @param isRetain don't return to object pool
      * @return true if the order was successfully removed, false otherwise
      */
-    public boolean removeOrder(String brokerID, String clientOrdId) {
+    public boolean removeOrder(String brokerID, String clientOrdId, boolean isRetain) {
         // Declare variables at the top of the method
         ConcurrentSkipListMap<BigDecimal, LinkedList<Order>> orderMap;
         ReentrantReadWriteLock readWriteLock;
@@ -217,7 +217,7 @@ public class OrderProcessingJob implements Runnable {
         }
 
         // If order was removed from the book, also remove from the mapper and return to the object pool
-        if (removed) {
+        if (removed && !isRetain) {
             orderObjMapper.remove(brokerID + "-" + clientOrdId);
             OrderPoolManager.returnOrderObj(order);
 
@@ -258,6 +258,11 @@ public class OrderProcessingJob implements Runnable {
 
         // If only updating quantity, we can do it directly without removing/re-adding
         if (quantity != null) {
+            if (quantity.equals(order.getRemainingQty().get())){
+                log.warn("Cannot update order: Order {}-{} is partially filled", brokerID, clientOrdId);
+                return false;
+            }
+
             OrderBook orderBook = orderBooks.get(order.getStockNo());
 
             if (orderBook == null) {
@@ -287,25 +292,14 @@ public class OrderProcessingJob implements Runnable {
         if (price != null) {
             // For price changes, we need to remove and re-add the order
             try {
-                // Create a new order with an updated price and/or quantity
-                Order newOrder = OrderPoolManager.requestOrderObj(
-                        order.getStockNo(),
-                        order.getBrokerID(),
-                        order.getClientOrdID(),
-                        OrderType.getByValue(order.getOrderType()),
-                        Action.getByValue(order.getBuyOrSell()),
-                        price,
-                        quantity != null ? quantity : order.getQuantity().get());
-
                 // First remove the old order
-                if (!removeOrder(brokerID, clientOrdId)) {
-                    // If removal failed, return the new order to the pool
-                    OrderPoolManager.returnOrderObj(newOrder);
+                if (!removeOrder(brokerID, clientOrdId, true)) {
                     return false;
                 }
 
-                // Then add the new order
-                putOrder(newOrder);
+                // Then add the new order using new price
+                order.setPrice(price);
+                putOrder(order);
 
                 log.info("Updated order {}-{} with new price=${} and quantity={}",
                         brokerID, clientOrdId,

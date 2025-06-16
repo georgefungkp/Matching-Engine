@@ -122,7 +122,7 @@ public class LimitOrderMatchingJob implements Runnable {
         // Get current values safely
         BigDecimal currentAvgPrice = order.getOrderAvgPrice();
         int currentFilledQty = order.getOrderFilledQty();
-        int currentQuantity = order.getQuantity().get();
+        int currentQuantity = order.getRemainingQty().get();
 
         // Calculate new values
         int newFilledQty = currentFilledQty + filledQty;
@@ -131,7 +131,6 @@ public class LimitOrderMatchingJob implements Runnable {
 
         // Update order atomically
         order.setFilledQty(newFilledQty);
-        order.setQuantity(newRemainingQty);
         order.setRemainingQty(newRemainingQty);
         order.setAvgPrice(newAvgPrice);
         order.setLastEventDateTime(tradeTime);
@@ -197,7 +196,7 @@ public class LimitOrderMatchingJob implements Runnable {
         if (currentPrice == null)
             return false;
 
-        if (order.getQuantity().get() == 0)
+        if (order.getRemainingQty().get() == 0)
             return false;
 
         if (order.isBuyOrder()) {
@@ -298,7 +297,7 @@ public class LimitOrderMatchingJob implements Runnable {
                 }
 
                 // Calculate filled quantity
-                filledQty = Math.min(topBid.getQuantity().get(), topAsk.getQuantity().get());
+                filledQty = Math.min(topBid.getRemainingQty().get(), topAsk.getRemainingQty().get());
 
                 // Use ask price for the trade (price-time priority)
                 tradePrice = askMap.lastEntry().getKey();
@@ -350,7 +349,7 @@ public class LimitOrderMatchingJob implements Runnable {
      * @param orderList The list containing the order
      */
     private void processCompletedOrder(Order order, LinkedList<Order> orderList) {
-        if (order.getQuantity().get() == 0) {
+        if (order.getRemainingQty().get() == 0) {
             Order completedOrder = orderList.pollFirst();
             if (completedOrder != null) {
                 String orderKey = completedOrder.getBrokerID() + "-" + completedOrder.getClientOrdID();

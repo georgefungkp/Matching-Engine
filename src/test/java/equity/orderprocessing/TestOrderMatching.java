@@ -51,6 +51,9 @@ public class TestOrderMatching {
     private static final int QUANTITY_200 = 200;
     private static final int QUANTITY_300 = 300;
     private static final int QUANTITY_400 = 400;
+    private static final int QUANTITY_500 = 500;
+    private static final int QUANTITY_600 = 600;
+    private static final int QUANTITY_800 = 800;
     private static final int QUANTITY_1000 = 1000;
     private static final int NO_OF_STOCKS = 2;
     
@@ -283,6 +286,10 @@ public class TestOrderMatching {
     private void verifyLargeBidCycle1(MatchingResult result) {
         assertEquals(0, PRICE_8_2.compareTo(result.trade.getExecutedPrice()));
         assertEquals(QUANTITY_200, result.trade.getExecutedQty());
+        assertEquals(QUANTITY_800, result.trade.getBuyOrderRemainingQty());
+        assertEquals(PRICE_8_2, result.trade.getBuyOrderAvgExecutedPrice());
+        assertEquals(0, result.trade.getSellOrderRemainingQty());
+        assertEquals(PRICE_8_2, result.trade.getSellOrderAvgExecutedPrice());
         assertEquals(0, PRICE_8_6.compareTo(result.marketData.bestBid()));
         assertEquals(0, PRICE_8_5.compareTo(result.marketData.bestAsk()));
     }
@@ -290,6 +297,10 @@ public class TestOrderMatching {
     private void verifyLargeBidCycle2(MatchingResult result) {
         assertEquals(0, PRICE_8_5.compareTo(result.trade.getExecutedPrice()));
         assertEquals(QUANTITY_300, result.trade.getExecutedQty());
+        assertEquals(QUANTITY_500, result.trade.getBuyOrderRemainingQty());
+        assertEquals(BigDecimal.valueOf(8.38).setScale(4, RoundingMode.HALF_UP), result.trade.getBuyOrderAvgExecutedPrice());
+        assertEquals(0, result.trade.getSellOrderRemainingQty());
+        assertEquals(PRICE_8_5, result.trade.getSellOrderAvgExecutedPrice());
         assertEquals(0, PRICE_8_6.compareTo(result.marketData.bestBid()));
         assertEquals(0, PRICE_8_6.compareTo(result.marketData.bestAsk()));
     }
@@ -297,6 +308,10 @@ public class TestOrderMatching {
     private void verifyLargeBidCycle3(MatchingResult result) {
         assertEquals(0, PRICE_8_6.compareTo(result.trade.getExecutedPrice()));
         assertEquals(QUANTITY_400, result.trade.getExecutedQty());
+        assertEquals(QUANTITY_100, result.trade.getBuyOrderRemainingQty());
+        assertEquals(BigDecimal.valueOf((double)7630/900).setScale(4, RoundingMode.HALF_UP), result.trade.getBuyOrderAvgExecutedPrice());
+        assertEquals(0, result.trade.getSellOrderRemainingQty());
+        assertEquals(PRICE_8_6, result.trade.getSellOrderAvgExecutedPrice());
         assertEquals(0, PRICE_8_6.compareTo(result.marketData.bestBid()));
         assertNull(result.marketData.bestAsk());
     }

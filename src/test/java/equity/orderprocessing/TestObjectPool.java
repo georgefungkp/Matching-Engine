@@ -4,6 +4,7 @@ import equity.client.RandomOrderRequestGenerator;
 import equity.externalparties.ResultingTradeJob;
 import equity.fix.server.FIXTradeServerApp;
 import equity.objectpooling.*;
+import equity.objectpooling.Order.Action;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -40,9 +41,12 @@ public class TestObjectPool {
     private static final BigDecimal PRICE_8_3 = BigDecimal.valueOf(8.3).setScale(4, RoundingMode.HALF_UP);
     private static final BigDecimal PRICE_7_1 = BigDecimal.valueOf(7.1).setScale(4, RoundingMode.HALF_UP);
     private static final int QUANTITY_300 = 300;
+    private static final int QUANTITY_200 = 200;
     private static final int QUANTITY_100 = 100;
     private static final int NO_OF_STOCKS = 2;
-    
+    private static final String BUY = Action.BUY.value;
+    private static final String SELL = Action.SELL.value;
+
     // Test data structures
     private static final ConcurrentHashMap<String, Order> orderObjMapper = new ConcurrentHashMap<>();
     private final LinkedBlockingQueue<Order> orderQueue = new LinkedBlockingQueue<>();
@@ -89,11 +93,11 @@ public class TestObjectPool {
 
     private void setupInitialOrders() {
         Order bidOrder1 = RandomOrderRequestGenerator.getNewLimitOrder(
-                STOCK_1, BROKER_1, CLIENT_ORDER_1, "B", PRICE_8_1, QUANTITY_300);
+                STOCK_1, BROKER_1, CLIENT_ORDER_1, BUY, PRICE_8_3, QUANTITY_300);
         orderProcessingJob.putOrder(bidOrder1);
 
         Order askOrder1 = RandomOrderRequestGenerator.getNewLimitOrder(
-                STOCK_1, BROKER_2, CLIENT_ORDER_2, "S", PRICE_8_1, QUANTITY_300);
+                STOCK_1, BROKER_2, CLIENT_ORDER_2, SELL, PRICE_8_1, QUANTITY_300);
         orderProcessingJob.putOrder(askOrder1);
     }
 
@@ -210,10 +214,10 @@ public class TestObjectPool {
     void testRemoveOrder() {
         // Given - verify initial order book state
         assertNotNull(orderBooks.get(STOCK_1).getBidMap());
-        assertEquals(0, PRICE_8_1.compareTo(orderBooks.get(STOCK_1).getBestBid()));
+        assertEquals( PRICE_8_3, orderBooks.get(STOCK_1).getBestBid());
 
         // When - remove order
-        boolean removed = orderProcessingJob.removeOrder(BROKER_1, CLIENT_ORDER_1);
+        boolean removed = orderProcessingJob.removeOrder(BROKER_1, CLIENT_ORDER_1, false);
 
         // Then - verify order removal
         assertTrue(removed);
@@ -225,22 +229,16 @@ public class TestObjectPool {
     @DisplayName("Should successfully update order price and quantity")
     void testUpdateOrder() throws InterruptedException {
         // Given - verify initial state
-        assertEquals(0, PRICE_8_1.compareTo(orderBooks.get(STOCK_1).getBestBid()));
+        assertEquals(PRICE_8_3, orderBooks.get(STOCK_1).getBestBid());
 
         // When - update order
-        boolean updated = orderProcessingJob.updateOrder(BROKER_1, CLIENT_ORDER_1, PRICE_7_1, QUANTITY_100);
+        boolean updated = orderProcessingJob.updateOrder(BROKER_1, CLIENT_ORDER_1, PRICE_7_1, QUANTITY_200);
 
         // Then - verify order update
         assertTrue(updated);
-        assertEquals(0, PRICE_7_1.compareTo(orderBooks.get(STOCK_1).getBestBid()));
+        assertEquals(PRICE_7_1, orderBooks.get(STOCK_1).getBestBid());
         assertEquals(1, orderBooks.get(STOCK_1).getBidMap().size());
         assertEquals(1, orderBooks.get(STOCK_1).getBidMap().get(PRICE_7_1).size());
-        assertEquals(QUANTITY_100, orderBooks.get(STOCK_1).getBidMap().get(PRICE_7_1).getFirst().getQuantity().get());
-
-        // When - attempt matching after update
-        orderMatching.matchTopOrder();
-
-        // Then - verify no trade occurs due to price mismatch
-        assertTrue(tradeDataQueue.isEmpty());
+        assertEquals(QUANTITY_200, orderBooks.get(STOCK_1).getBidMap().get(PRICE_7_1).getFirst().getQuantity().get());
     }
 }

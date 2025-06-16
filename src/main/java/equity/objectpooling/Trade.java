@@ -63,9 +63,9 @@ public class Trade {
         this.stockNo = stockNo;
         this.executedPrice = executedPrice.setScale(PRICE_SCALE, PRICE_ROUNDING);
         this.executedQty = executedQty;
-        this.buyOrderRemainingQty = bidOrder.getQuantity().get();
+        this.buyOrderRemainingQty = bidOrder.getRemainingQty().get();
         this.buyOrderAvgExecutedPrice = getOrderAvgPriceAsBigDecimal(bidOrder);
-        this.sellOrderRemainingQty = askOrder.getQuantity().get();
+        this.sellOrderRemainingQty = askOrder.getRemainingQty().get();
         this.sellOrderAvgExecutedPrice = getOrderAvgPriceAsBigDecimal(askOrder);
         this.executionDateTime = parseDateTime(executionDateTime);
     }
