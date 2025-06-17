@@ -18,7 +18,7 @@ This project implements a Matching Engine, a key component in trading platforms 
 
  - Efficient order handling and order book maintenance
  - Supports **limit** as well as **market** orders
- - Real-time matching logic. WHen best_bid >= best_ask, the trade executes at the _ask price_ (lower price)
+ - Real-time matching logic. When best_bid >= best_ask, the trade executes at the _ask price_ (lower price)
  - After order matching, trade and market data are sent to Client. 
  - Extensible and maintainable code
  - Supports internal message format as well as FIX message format
