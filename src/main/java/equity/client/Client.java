@@ -52,18 +52,23 @@ public class Client {
 	}
 
 	private static @NotNull String sendOrderToServer(Socket client, Order order) throws IOException {
-		DataOutputStream outToServer = new DataOutputStream(client.getOutputStream());
 		//Stock No: Broker ID: Order Type: B/S: Price: Quantity
 		String message = order.getStockNo() + ":" + order.getBrokerID() + ":" + order.getClientOrdID() + ":"
 				+ order.getOrderType() + ":" + order.getBuyOrSell() + ":"
 				+ order.getPrice().get() + ":" + order.getQuantity();
+		return sendMessageToServer(client, message);
 //					message = "00001:003:L:B:8.1:500";
 //					message = "00001:003:L:B:8.2:400";
 //		message = "00001:001:M:S:8.2:10000";
+	}
+
+	public static @NotNull String sendMessageToServer(Socket client, String message) throws IOException {
+		DataOutputStream outToServer = new DataOutputStream(client.getOutputStream());
 		outToServer.writeBytes(message + '\n');
+//		outToServer.writeUTF(message);
+		outToServer.flush();
 		DataInputStream inFromServer = new DataInputStream(client.getInputStream());
 		return inFromServer.readUTF();
-
 	}
 
 }

@@ -30,7 +30,7 @@ import static util.ReadConfig.dotenv;
 public class MatchingEngine extends Thread {
     private static final int noOfAvailableThreads = Runtime.getRuntime().availableProcessors();
     private static final Logger log = LogManager.getLogger(MatchingEngine.class);
-    private static final String SUCCESS_MSG_TEMPLATE = " is processing your order. Good Luck!";
+    private static final String SUCCESS_MSG_TEMPLATE = " is processing your order: ";
 
     private static final LinkedBlockingQueue<Order> orderQueue = new LinkedBlockingQueue<>();
     private static final LinkedBlockingQueue<MarketData> marketDataQueue = new LinkedBlockingQueue<>();
@@ -91,7 +91,7 @@ public class MatchingEngine extends Thread {
      * @throws IOException if an I/O error occurs when creating the server socket or working with the streams
      */
     private void gettingOnline() throws IOException {
-        // Create a ServerSocket at certain port
+        // Create a ServerSocket at a certain port
         try (ServerSocket serverSocket = new ServerSocket(Integer.parseInt(Objects.requireNonNull(dotenv.get("port_number"))))) {
             while (listening) {
                 // Await client connection
@@ -102,8 +102,8 @@ public class MatchingEngine extends Thread {
                      DataOutputStream out = new DataOutputStream(server.getOutputStream())) {
                     Order order = createOrder(in.readLine());
                     orderQueue.put(order);
-                    log.debug("Order Queue: {}", orderQueue.size());
-                    out.writeUTF(server.getLocalSocketAddress() + SUCCESS_MSG_TEMPLATE);
+                    log.debug("Order Queue size: {}", orderQueue.size());
+                    out.writeUTF(server.getLocalSocketAddress() + SUCCESS_MSG_TEMPLATE + order.getBrokerID() + "-" + order.getClientOrdID());
                 } catch (Exception e) {
                     log.error(e);
                     listening = false;

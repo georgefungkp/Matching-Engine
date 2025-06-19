@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class LimitOrderMatchingJob implements Runnable {
     private static final Logger log = LogManager.getLogger(LimitOrderMatchingJob.class);
-    private static final int PROCESSING_DELAY_MS = 1;
+    private static final int PROCESSING_DELAY_MS = 1000;
     private final String stockNo;
     private final OrderBook orderBook;
     private final ConcurrentSkipListMap<BigDecimal, LinkedList<Order>> bidMap;
@@ -92,20 +92,20 @@ public class LimitOrderMatchingJob implements Runnable {
 
 
     /**
-     * Checks if matching limit orders are available for trade execution.
-     * For a match to be possible, both the ask and bid maps must contain orders,
-     * and the best bid price must be greater than or equal to the best ask price.
+     * Determines whether order matching should be skipped based on the state of the order book.
+     * This method checks if either the bid or ask map is empty or if the prices do not meet the matching criteria.
      *
-     * @return true if matching orders are available, false otherwise
+     * @return true if order matching should be skipped (either the bid or ask map is empty,
+     *         or the best bid price is less than the best ask price), false otherwise
      */
-    private boolean isLimitOrderAvailable() {
+    private boolean shouldMatchingSkipped() {
         // Both bid and ask maps must have orders
         if (askMap.isEmpty() || bidMap.isEmpty()) {
-            return false;
+            return true;
         }
 
         // For a match, best bid price must be >= best ask price
-        return askMap.lastKey().compareTo(bidMap.lastKey()) <= 0;
+        return askMap.lastKey().compareTo(bidMap.lastKey()) > 0;
     }
 
 
@@ -261,7 +261,7 @@ public class LimitOrderMatchingJob implements Runnable {
      */
     public void matchTopOrder() throws InterruptedException {
         // Quick check without locks first
-        if (!isLimitOrderAvailable()) {
+        if (shouldMatchingSkipped()) {
             return;
         }
 
@@ -278,7 +278,7 @@ public class LimitOrderMatchingJob implements Runnable {
             orderBook.getAskLock().writeLock().lock();
             try {
                 // Check again with locks held
-                if (!isLimitOrderAvailable()) {
+                if (shouldMatchingSkipped()) {
                     return;
                 }
 

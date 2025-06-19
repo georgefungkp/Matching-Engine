@@ -152,8 +152,10 @@ public class OrderBook {
 
 
     public void showMap() {
+        log.debug("Order Map of {} Best bid: {} Best ask: {}", stockNo, getBestBid(), getBestAsk());
         showMap("B");
         showMap("S");
+        log.debug("\n");
     }
 
 
