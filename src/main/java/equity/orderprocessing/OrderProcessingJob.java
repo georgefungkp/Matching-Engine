@@ -327,15 +327,9 @@ public class OrderProcessingJob implements Runnable {
 
         while (!isInterrupted) {
             try {
-                // Wait for next order (blocking operation)
+                // Wait for the next order (blocking operation)
                 log.debug("Waiting for orders from queue");
                 Order order = orderQueue.take();
-
-                // Validate order before processing
-                if (order == null) {
-                    log.warn("Received null order from queue, ignoring");
-                    continue;
-                }
 
                 // Validate stock exists
                 if (!orderBooks.containsKey(order.getStockNo())) {

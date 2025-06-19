@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class LimitOrderMatchingJob implements Runnable {
     private static final Logger log = LogManager.getLogger(LimitOrderMatchingJob.class);
-    private static final int PROCESSING_DELAY_MS = 1000;
+    private static final int PROCESSING_DELAY_MS = 1;
     private final String stockNo;
     private final OrderBook orderBook;
     private final ConcurrentSkipListMap<BigDecimal, LinkedList<Order>> bidMap;
@@ -71,12 +71,8 @@ public class LimitOrderMatchingJob implements Runnable {
 
         while (!isInterrupted) {
             try {
-                // Pause between processing cycles
-                TimeUnit.MILLISECONDS.sleep(PROCESSING_DELAY_MS);
-
                 // Process any matching orders
                 matchTopOrder();
-
             } catch (InterruptedException e) {
                 log.info("Order matching interrupted for stock {}", stockNo);
                 Thread.currentThread().interrupt(); // Preserve interrupt status
@@ -262,6 +258,8 @@ public class LimitOrderMatchingJob implements Runnable {
     public void matchTopOrder() throws InterruptedException {
         // Quick check without locks first
         if (shouldMatchingSkipped()) {
+            // Pause it is not enough liquidity
+            TimeUnit.MILLISECONDS.sleep(PROCESSING_DELAY_MS);
             return;
         }
 
