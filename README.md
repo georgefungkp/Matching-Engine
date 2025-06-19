@@ -42,7 +42,7 @@ List here the prerequisites and links to the installation procedure of each:
 | Search Order | O(1)                     |
 
 ## Design Consideration
-- The data structure of order book is <b> Tree map </b> with <b> LinkedList </b>. So, the time complexity of a new limit price is O(log n), and first or last key is O(1) as Java always caches the leftmost/rightmost nodes. For cancellation, it's also O(log n). On average, Tree map is the best choice in JDK implementation.
+- The time complexity of order handling is shown as below:
 
 | Operation               | PriorityQueue(Binary Heap) | TreeMap(Red-black Tree)    |
 |:------------------------|:---------------------------|:---------------------------|
@@ -52,15 +52,16 @@ List here the prerequisites and links to the installation procedure of each:
 | Search by Price         | O(n)                       | O(log n)                   |
 | Iterate in Sorted Order | O(n log n)                 | O(n)                       |
 
+- The data structure of order book is <b> Tree map </b> with <b> LinkedList </b>. So, the time complexity of a new limit price is O(log n), and first or last key is O(1) as Java always caches the leftmost/rightmost nodes. For cancellation, it's also O(log n). On average, Tree map is the best choice in JDK implementation.
+![A](images/PQvsTreeMap.jpg)
 
 - In the single-thread environment, TreeMap ensures the performance is O(log n). However, TreeMap may not be the best choice in the concurrency. It's not thread-safe and developer has to handle race conditions.
 So, I choose to use <b>ConcurrenctSkipListMap</b> to replace TreeMap as it is good for individual atomic operations. All basic operations (put, get, remove) are thread-safe by design 
 so that it provides atomicity for single operations.
+![B](images/TreeMapvsConcurrentSkipListMap.jpg)
 
-The time complexity of order handling is shown as below:
 
 - Use Hashmap to record order object reference so that it's easy to amend or cancel the order. 
-- Use Double instead of BigDecimal in the NavigatorMap to save memory footprint (8 bytes vs 32+ bytes).
 - Order object pool is created so that we can minimize the number of objects and times of GC in the memory, and reduce latency of order creation.
 - Difference exchanges give different priority to market order. In this design, the market order is treated as the best available order and is executed first.
 
