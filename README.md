@@ -24,7 +24,7 @@ This project implements a Matching Engine, a key component in trading platforms 
  - Supports internal message format as well as FIX message format
 
 ## Getting Started
-![Diagram](images/Matching%20Engine%20Component%20Diagram.svg)
+![Diagram](https://github.com/georgefungkp/Matching-Engine/blob/main/images/Matching%20Engine%20Component%20Diagram.svg)
 ### Prerequisites
 
 List here the prerequisites and links to the installation procedure of each:
