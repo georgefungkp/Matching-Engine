@@ -97,12 +97,12 @@ public class LimitOrderMatchingJob implements Runnable {
     private boolean shouldMatchingSkipped() {
         // Both bid and ask maps must have orders
         if (askMap.isEmpty() || bidMap.isEmpty()) {
-            log.debug("Skipping matching for stock {}: bid empty={}, ask empty={}",
-                stockNo, bidMap.isEmpty(), askMap.isEmpty());
+//            log.debug("Skipping matching for stock {}: bid empty={}, ask empty={}",
+//                stockNo, bidMap.isEmpty(), askMap.isEmpty());
             return true;
         }
 
-        BigDecimal bestAsk = askMap.firstKey();
+        BigDecimal bestAsk = askMap.lastKey();
         BigDecimal bestBid = bidMap.lastKey();
 
         // For a match, best bid price must be >= best ask price
