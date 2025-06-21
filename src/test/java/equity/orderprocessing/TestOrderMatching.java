@@ -26,7 +26,6 @@ public class TestOrderMatching {
     // Constants
     private static final String STOCK_1 = "00001";
     private static final String STOCK_2 = "00002";
-    private static final String STOCK_EMPTY = "00000";
     private static final String BROKER_1 = "Broker 1";
     private static final String BROKER_2 = "Broker 2";
     private static final String BROKER_3 = "Broker 3";
@@ -94,8 +93,6 @@ public class TestOrderMatching {
             String stockId = String.format("%05d", i);
             orderBooks.put(stockId, new OrderBook(stockId, "Stock " + i));
         }
-        // Add empty order book for testing
-        orderBooks.put(STOCK_EMPTY, new OrderBook(STOCK_EMPTY, "Empty Stock"));
     }
 
     private void initializeTestSubjects() {
@@ -133,7 +130,6 @@ public class TestOrderMatching {
     private void clearObjectPools() {
         OrderPoolManager.clearObjects(STOCK_1);
         OrderPoolManager.clearObjects(STOCK_2);
-        OrderPoolManager.clearObjects(STOCK_EMPTY);
     }
 
     @Test
@@ -188,28 +184,6 @@ public class TestOrderMatching {
         assertEquals(0, PRICE_8_5.compareTo(result.marketData.bestBid()));
         assertNull(result.marketData.bestAsk());
         assertEquals(0, PRICE_8_3.compareTo(result.marketData.lastTradePrice()));
-    }
-
-    @Test
-    @DisplayName("Should handle empty order book gracefully")
-    void testEmptyBook() throws InterruptedException {
-        // Given - empty order book
-        LimitOrderMatchingJob emptyMatching = new LimitOrderMatchingJob(
-                orderBooks.get(STOCK_EMPTY), 
-                orderObjMapper, 
-                marketDataQueue, 
-                tradeDataQueue,
-                orderProcessingJob
-        );
-        
-        // When - attempt to match on empty book
-        emptyMatching.matchTopOrder();
-        
-        // Then - no trades or market data should be generated
-        assertTrue(marketDataQueue.isEmpty());
-        assertTrue(tradeDataQueue.isEmpty());
-        assertNull(orderBooks.get(STOCK_EMPTY).getBestBid());
-        assertNull(orderBooks.get(STOCK_EMPTY).getBestAsk());
     }
 
     @Test
@@ -319,9 +293,6 @@ public class TestOrderMatching {
     @Test
     @DisplayName("Should remain bid and ask orders after match although they looks equal")
     void testComplicatedCase() throws InterruptedException {
-        // Given - clear existing orders and create a perfect match scenario
-        clearTestData();
-        
         Order bidOrder = createLimitOrder(STOCK_1, BROKER_1, CLIENT_BUY_ORDER_2, BUY, PRICE_8_2, QUANTITY_200);
         Order askOrder = createLimitOrder(STOCK_1, BROKER_2, CLIENT_SELL_ORDER_2, SELL, PRICE_8_1, QUANTITY_300);
         

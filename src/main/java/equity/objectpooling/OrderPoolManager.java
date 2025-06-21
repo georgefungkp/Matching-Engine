@@ -73,9 +73,21 @@ public class OrderPoolManager {
         return mainTradeObjMap.get(stockNo).getUsedTradeCount();
     }
 
-    public static void clearObjects(String stockNo){
-        mainOrderObjMap.get(stockNo).resetPool();
-        mainTradeObjMap.get(stockNo).resetPool();
+    public static void clearObjects(String stockNo) {
+        OrderObjectPool orderPool = mainOrderObjMap.get(stockNo);
+        TradeObjectPool tradePool = mainTradeObjMap.get(stockNo);
+
+        if (orderPool != null) {
+            orderPool.resetPool();
+        }else{
+            throw new IllegalArgumentException("Invalid stock number: " + stockNo + " No order object pool exists for this stock.");
+        }
+        if (tradePool != null) {
+            tradePool.resetPool();
+        }else{
+            throw new IllegalArgumentException("Invalid stock number: " + stockNo + " No trade object pool exists for this stock.");
+        }
     }
+
 }
 
