@@ -38,6 +38,7 @@ public class Trade {
     private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
 
     // === Constructor ===
+    Trade (){this.tradeId = TRADE_ID_GENERATOR.getNextSequence();}
 
     Trade(Order bidOrder, Order askOrder, String stockNo, BigDecimal executedPrice, int executedQty, String executionDateTime) {
         this.tradeId = TRADE_ID_GENERATOR.getNextSequence();

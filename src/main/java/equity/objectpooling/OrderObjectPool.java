@@ -15,8 +15,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class OrderObjectPool {
     private static final Logger log = LogManager.getLogger(MatchingEngine.class);
-    private final Map<Integer, Order> orderMap = new HashMap<>();
-    // or ConcurrentHashMap.newKeySet()
     private final Set<Order> inUsedOrderList = ConcurrentHashMap.newKeySet();
     private final Set<Order> freeOrderList = ConcurrentHashMap.newKeySet();
     private final String stockNo;
@@ -50,7 +48,6 @@ public class OrderObjectPool {
             freeOrderList.remove(newOrder);
         }
         inUsedOrderList.add(newOrder);
-        orderMap.put(sequenceGenerator.getNextSequence(), newOrder);
         return newOrder;
     }
 
@@ -64,7 +61,8 @@ public class OrderObjectPool {
         if (order != null){
             if (!inUsedOrderList.remove(order))
                 log.error("{} is not in use. Need to check ", order.toString());
-            freeOrderList.add(order);
+            else
+                freeOrderList.add(order);
         }
     }
 
@@ -77,7 +75,6 @@ public class OrderObjectPool {
     }
 
     public void resetPool(){
-        orderMap.clear();
         inUsedOrderList.clear();
         freeOrderList.clear();
     }

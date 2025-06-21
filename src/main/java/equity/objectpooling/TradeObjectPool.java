@@ -6,16 +6,13 @@ import org.apache.logging.log4j.Logger;
 import util.SequenceGenerator;
 
 import java.math.BigDecimal;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 
 public class TradeObjectPool {
     private static final Logger log = LogManager.getLogger(MatchingEngine.class);
-    private final Map<Integer, Trade> tradeObjMap = new HashMap<>();
     private final Set<Trade> inUsedTradeObjList = ConcurrentHashMap.newKeySet();
     private final Set<Trade> freeTradeObjList = ConcurrentHashMap.newKeySet();
     private final String stockNo;
@@ -37,7 +34,6 @@ public class TradeObjectPool {
             freeTradeObjList.remove(newTrade);
         }
         inUsedTradeObjList.add(newTrade);
-        tradeObjMap.put(sequenceGenerator.getNextSequence(), newTrade);
         return newTrade;
     }
 
@@ -51,7 +47,11 @@ public class TradeObjectPool {
         if (trade != null){
             if (!inUsedTradeObjList.remove(trade))
                 log.error("{} is not in use. Need to check ", trade.toString());
-            freeTradeObjList.add(trade);
+            else {
+                freeTradeObjList.add(trade);
+                log.debug("{} free trade objects", freeTradeObjList.size());
+                log.debug("{} trade objects in use", inUsedTradeObjList.size());
+            }
         }
     }
 
@@ -64,7 +64,6 @@ public class TradeObjectPool {
     }
 
     public void resetPool(){
-        tradeObjMap.clear();
         inUsedTradeObjList.clear();
         freeTradeObjList.clear();
     }

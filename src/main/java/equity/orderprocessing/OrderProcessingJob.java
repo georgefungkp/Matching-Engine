@@ -79,6 +79,18 @@ public class OrderProcessingJob implements Runnable {
             return;
         }
 
+        // Handle market orders - set price based on best available in an opposite book BEFORE acquiring any locks
+        if (order.isMarketOrder()) {
+            BigDecimal price = order.isBuyOrder() ? orderBook.getBestAsk() : orderBook.getBestBid();
+            order.setPrice(price);
+
+            if (price == null) {
+                log.warn("Cannot process order: no price available for market order {}-{}",
+                        order.getBrokerID(), order.getClientOrdID());
+                return;
+            }
+        }
+
         // Determine which order a book to use (bid or ask)
         if (order.isBuyOrder()) {
             orderMap = orderBook.getBidMap();
@@ -88,16 +100,6 @@ public class OrderProcessingJob implements Runnable {
             readWriteLock = orderBook.getAskLock();
         }
 
-        // Handle market orders - set price based on best available in an opposite book
-        if (order.isMarketOrder())
-            order.setPrice(order.isBuyOrder()? orderBook.getBestAsk():orderBook.getBestBid());
-
-        // Check if the price is available after setting the market order price
-        if (order.getPrice().get() == null) {
-            log.warn("Cannot process order: no price available for market order {}-{}", 
-                    order.getBrokerID(), order.getClientOrdID());
-            return;
-        }
 
         // Add order to the order book under lock protection
         readWriteLock.writeLock().lock();
@@ -324,24 +326,27 @@ public class OrderProcessingJob implements Runnable {
     @Override
     public void run() {
         log.info("Order processing job started");
+        int processedOrders = 0;
 
         while (!isInterrupted) {
             try {
                 // Wait for the next order (blocking operation)
-                log.debug("Waiting for orders from queue");
+                log.debug("Waiting for orders from queue ({})", orderQueue.size());
                 Order order = orderQueue.take();
+                processedOrders++;
 
                 // Validate stock exists
                 if (!orderBooks.containsKey(order.getStockNo())) {
-                    log.warn("Received order for unknown stock {}, ignoring", order.getStockNo());
+                    log.warn("Received order for unknown stock {}. Available stocks: {}",
+                        order.getStockNo(), orderBooks.keySet());
                     continue;
                 }
 
                 // Process the order
-                log.debug("Processing order: {}-{} for stock {}", 
+                log.debug("Order {}-{} for stock {} will be processed",
                         order.getBrokerID(), order.getClientOrdID(), order.getStockNo());
                 putOrder(order);
-
+                log.debug("Successfully processed order #{}", processedOrders);
             } catch (InterruptedException e) {
                 log.info("Order processing job interrupted, shutting down");
                 Thread.currentThread().interrupt(); // Preserve interrupt status

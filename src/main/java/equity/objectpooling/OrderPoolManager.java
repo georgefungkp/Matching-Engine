@@ -21,18 +21,26 @@ public class OrderPoolManager {
 
     static {
         int noOfStock = Integer.parseInt(Objects.requireNonNull(dotenv.get("no_of_stock")));
-        for (int i = 0; i < noOfStock; i++) {
+        for (int i = 1; i <= noOfStock; i++) {
             mainOrderObjMap.put(java.lang.String.format("%05d", i), new OrderObjectPool(java.lang.String.format("%05d", i)));
             mainTradeObjMap.put(java.lang.String.format("%05d", i), new TradeObjectPool(java.lang.String.format("%05d", i)));
         }
     }
 
     public static Order requestOrderObj(String stockNo, String brokerID, String clientOrdID, OrderType orderType, Action buyOrSell, BigDecimal price, int quantity){
-        return mainOrderObjMap.get(stockNo).makeANewOrder(brokerID, clientOrdID, orderType, buyOrSell, price, quantity);
+        OrderObjectPool pool = mainOrderObjMap.get(stockNo);
+        if (pool == null) {
+            throw new IllegalArgumentException("Invalid stock number: " + stockNo + " No order object pool exists for this stock.");
+        }
+        return pool.makeANewOrder(brokerID, clientOrdID, orderType, buyOrSell, price, quantity);
     }
 
     public static Trade requestTradeObj(Order bidOrder, Order askOrder, String stockNo, BigDecimal executedPrice, int executedQty, String executionDateTime){
-        return mainTradeObjMap.get(stockNo).makeANewTrade(bidOrder, askOrder, stockNo, executedPrice, executedQty, executionDateTime);
+        TradeObjectPool pool = mainTradeObjMap.get(stockNo);
+        if (pool == null) {
+            throw new IllegalArgumentException("Invalid stock number: " + stockNo + " No trade object pool exists for this stock.");
+        }
+        return pool.makeANewTrade(bidOrder, askOrder, stockNo, executedPrice, executedQty, executionDateTime);
     }
 
     // Accept an object back to pool

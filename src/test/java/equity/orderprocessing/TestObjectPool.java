@@ -159,6 +159,41 @@ public class TestObjectPool {
     }
 
     @Test
+    @DisplayName("Should occupy two trade objects after processing")
+    void testTwoTradeObject() throws Exception {
+        // Given - mock file service behavior
+        when(fileChannelService.writeTradeToFile(any(Trade.class), any(Path.class)))
+                .thenReturn(100);
+
+        // When - match orders to create trade
+        orderMatching.matchTopOrder();
+
+        // Then - verify trade object creation
+        assertEquals(0, OrderPoolManager.getFreeTradeCount(STOCK_1));
+        assertEquals(1, OrderPoolManager.getUsedTradeCount(STOCK_1));
+
+        // Given - setup for second trade
+        setupSecondTradeScenario();
+        orderMatching.matchTopOrder();
+
+        // Then - verify trade object creation again
+        assertEquals(0, OrderPoolManager.getFreeTradeCount(STOCK_1));
+        assertEquals(2, OrderPoolManager.getUsedTradeCount(STOCK_1));
+
+        // When - process trade
+        Trade testTrade = tradeDataQueue.take();
+        resultingTradeJob.processTradeData(testTrade);
+        Trade testTrade2 = tradeDataQueue.take();
+        resultingTradeJob.processTradeData(testTrade2);
+
+        verify(fileChannelService, times(2)).writeTradeToFile(any(Trade.class), any(Path.class));
+
+        // Then - verify trade processing and object return
+        assertEquals(2, OrderPoolManager.getFreeTradeCount(STOCK_1));
+        assertEquals(0, OrderPoolManager.getUsedTradeCount(STOCK_1));
+    }
+
+    @Test
     @DisplayName("Should reuse Trade objects after processing")
     void testReUseTradeObject() throws Exception {
         // Given - mock file service behavior

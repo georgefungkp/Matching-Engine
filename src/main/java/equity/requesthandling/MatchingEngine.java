@@ -11,6 +11,7 @@ import equity.orderprocessing.OrderProcessingJob;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import util.FileChannelService;
+import util.HealthCheck;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -64,18 +65,32 @@ public class MatchingEngine extends Thread {
      * and a LimitOrderMatchingJob is executed on that thread to match bID and ask orders.
      */
     private void startOrderMatchingJobs(OrderProcessingJob orderProcessingJob){
-        for (int i=0;i<noOfStock;i++) {
-            OrderBook orderBook = new OrderBook(String.format("%05d", i), "Stock " + i);
-            orderBooks.put(String.format("%05d", i), orderBook);
-            new Thread(new LimitOrderMatchingJob(orderBook, orderObjMapper, marketDataQueue, resultingTradeQueue, orderProcessingJob)).start();
-        }
+        for (int i=1;i<=noOfStock;i++) {
+            String stockId = String.format("%05d", i);
+            OrderBook orderBook = new OrderBook(stockId, "Stock " + i);
+            orderBooks.put(stockId, orderBook);
+
+            LimitOrderMatchingJob matchingJob = new LimitOrderMatchingJob(
+                orderBook,
+                orderObjMapper,
+                marketDataQueue,
+                resultingTradeQueue,
+                orderProcessingJob
+            );
+
+            Thread matchingThread = new Thread(matchingJob);
+            matchingThread.setName("Matching-" + stockId);
+            matchingThread.start();
+
+            log.info("Started matching thread for stock {}", stockId);
+            }
     }
 
 
     public void startProcessingJobs() {
         OrderProcessingJob orderProcessingJob = new OrderProcessingJob(orderQueue, orderBooks, orderObjMapper);
         startOrderMatchingJobs(orderProcessingJob);
-        new Thread(new OrderProcessingJob(orderQueue, orderBooks, orderObjMapper)).start();
+        new Thread(orderProcessingJob).start();
         new Thread(new MarketDataJob(marketDataQueue,fileChannelService)).start();
         new Thread(new ResultingTradeJob(resultingTradeQueue, this.fixTradeServerApp, fileChannelService)).start();
     }
@@ -103,8 +118,10 @@ public class MatchingEngine extends Thread {
                     Order order = createOrder(in.readLine());
                     orderQueue.put(order);
                     log.debug("Order Queue size: {}", orderQueue.size());
+                    HealthCheck.checkQueueHealth(orderQueue);
                     out.writeUTF(server.getLocalSocketAddress() + SUCCESS_MSG_TEMPLATE + order.getBrokerID() + "-" + order.getClientOrdID());
                 } catch (Exception e) {
+                    e.printStackTrace();
                     log.error(e);
                     listening = false;
                 }
