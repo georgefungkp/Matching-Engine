@@ -104,20 +104,16 @@ public class OrderBook {
      *
      * @param buyOrSell the indicator for whether the operation is for buying ("B") or selling ("S")
      */
-    public void showMap(String buyOrSell) {
+    public void showMapWithoutLocking(String buyOrSell) {
         ConcurrentSkipListMap<BigDecimal, LinkedList<Order>> orderMap;
-        ReentrantReadWriteLock readWriteLock;
         if (Action.getByValue(buyOrSell) == Action.BUY) {
             orderMap = bidMap;
-            readWriteLock = bidLock;
         } else {
             orderMap = askMap;
-            readWriteLock = askLock;
         }
 
         if (orderMap.isEmpty())
             return;
-        readWriteLock.readLock().lock();
         log.debug("{}-{} {}", this.stockNo, this.desc, buyOrSell);
         log.debug("the first price: {}", orderMap.firstKey());
         log.debug("the last price: {}", orderMap.lastKey());
@@ -126,7 +122,6 @@ public class OrderBook {
             entry.getValue().forEach(a -> log.debug("Broker ID {} Client Brk ID {} Qty {} ", a.getBrokerID(), a.getClientOrdID(), a.getRemainingQty()));
             log.debug("The time of head is {}", Objects.requireNonNull(entry.getValue().peek()).getCreatedDateTime());
         }
-        readWriteLock.readLock().unlock();
     }
 
 
@@ -152,10 +147,26 @@ public class OrderBook {
 
 
     public void showMap() {
-        log.debug("Order Map of {} Best bid: {} Best ask: {}", stockNo, getBestBid(), getBestAsk());
-        showMap("B");
-        showMap("S");
-        log.debug("\n");
+        // Acquire locks in a consistent order
+        bidLock.readLock().lock();
+        try {
+            askLock.readLock().lock();
+            try {
+                // Show the maps
+                log.debug("Order Map of {} Best bid: {} Best ask: {}",
+                         stockNo,
+                         bidMap.isEmpty() ? null : bidMap.lastKey(),
+                         askMap.isEmpty() ? null : askMap.lastKey());
+                // Show bid and ask maps
+                showMapWithoutLocking(Action.BUY.value);
+                showMapWithoutLocking(Action.SELL.value);
+                log.debug("\n");
+            } finally {
+                askLock.readLock().unlock();
+            }
+        } finally {
+            bidLock.readLock().unlock();
+        }
     }
 
 
