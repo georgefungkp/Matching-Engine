@@ -33,7 +33,7 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Mockito Spy and Mock Behavior Tests")
-public class MockSpyTest {
+public class TestMockSpy {
     
     // Constants
     private static final String STOCK_1 = "00001";
@@ -46,7 +46,7 @@ public class MockSpyTest {
     private static final int EXPECTED_WRITE_RESULT = 100;
     private static final int NO_OF_STOCKS = 2;
     
-    private static final Logger log = LogManager.getLogger(MockSpyTest.class);
+    private static final Logger log = LogManager.getLogger(TestMockSpy.class);
     
     // Test data structures
     private static final ConcurrentHashMap<String, Order> orderObjMapper = new ConcurrentHashMap<>();

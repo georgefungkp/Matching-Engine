@@ -19,7 +19,7 @@ public class ReadConfig {
         // Check if running from test
         for (StackTraceElement element : Thread.currentThread().getStackTrace()) {
             if (element.getClassName().startsWith("org.junit.") || 
-                element.getClassName().contains("Test")) {
+                element.getClassName().startsWith("Test")) {
                 return true;
             }
         }
