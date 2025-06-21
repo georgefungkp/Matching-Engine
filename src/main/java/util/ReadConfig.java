@@ -4,7 +4,7 @@ import io.github.cdimascio.dotenv.Dotenv;
 
 public class ReadConfig {
     private static final String TEST_CONFIG = "test.config";
-    private static final String PROD_CONFIG = "prod.config";
+    private static final String PROD_CONFIG = "dev.config";
     public static Dotenv dotenv;
 
     static {
