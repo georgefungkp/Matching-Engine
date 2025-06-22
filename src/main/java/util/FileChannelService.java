@@ -19,11 +19,12 @@ import java.util.Map.Entry;
 
 public class FileChannelService {
     private static final Logger log = LogManager.getLogger(FileChannelService.class);
+    private static final SequenceGenerator TRADE_ID_GENERATOR = new SequenceGenerator();
 
     public int writeTradeToFile(Trade tradeData, Path path) throws IOException {
         // Trade seq Id, Stock No, Bid Broker Id, Bid Order id, Sell Broker Id, Sell order id, Executed Price, Qty, Executed Time\
         String message = String.format("%s, %s,%s,%s,%s,%s,%s %s %s\r\n",
-                tradeData.getTradeId(),
+                TRADE_ID_GENERATOR.getNextSequence(),
                 tradeData.getStockNo(),
                 tradeData.getBuyBrokerID(),
                 tradeData.getBuyOrderID(),
@@ -55,7 +56,7 @@ public class FileChannelService {
 
         FileLock lock;
         int noOfBytes;
-        try (FileChannel fileChannel = FileChannel.open(path, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
+        try (FileChannel fileChannel = FileChannel.open(path, StandardOpenOption.CREATE, StandardOpenOption.APPEND)) {
             lock = fileChannel.lock();
             noOfBytes = fileChannel.write(ByteBuffer.wrap(message.getBytes()));
             lock.release(); // manually release the lock
