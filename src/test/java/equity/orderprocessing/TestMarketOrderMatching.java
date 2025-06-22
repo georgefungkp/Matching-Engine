@@ -14,10 +14,12 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static util.ReadConfig.dotenv;
 
 @DisplayName("Market Order Matching Tests")
 public class TestMarketOrderMatching {
@@ -60,7 +62,7 @@ public class TestMarketOrderMatching {
     private static final int QUANTITY_600 = 600;
 
     // System Constants
-    private static final int NO_OF_STOCKS = 2;
+    private static final int NO_OF_STOCKS = Integer.parseInt(Objects.requireNonNull(dotenv.get("no_of_stock")));
     private static final int INITIAL_FREE_ORDERS = 0;
 
     // Test Infrastructure

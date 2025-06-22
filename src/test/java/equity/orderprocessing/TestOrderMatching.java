@@ -15,10 +15,12 @@ import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static util.ReadConfig.dotenv;
 
 @DisplayName("Limit Order Matching Tests")
 public class TestOrderMatching {
@@ -54,7 +56,7 @@ public class TestOrderMatching {
     private static final int QUANTITY_600 = 600;
     private static final int QUANTITY_800 = 800;
     private static final int QUANTITY_1000 = 1000;
-    private static final int NO_OF_STOCKS = 2;
+    private static final int NO_OF_STOCKS = Integer.parseInt(Objects.requireNonNull(dotenv.get("no_of_stock")));
     
     // Test data structures
     private static final ConcurrentHashMap<String, Order> orderObjMapper = new ConcurrentHashMap<>();

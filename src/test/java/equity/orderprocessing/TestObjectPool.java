@@ -19,12 +19,14 @@ import java.math.RoundingMode;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static util.ReadConfig.dotenv;
 
 @DisplayName("Object Pool Management Tests")
 public class TestObjectPool {
@@ -43,7 +45,7 @@ public class TestObjectPool {
     private static final int QUANTITY_300 = 300;
     private static final int QUANTITY_200 = 200;
     private static final int QUANTITY_100 = 100;
-    private static final int NO_OF_STOCKS = 2;
+    private static final int NO_OF_STOCKS = Integer.parseInt(Objects.requireNonNull(dotenv.get("no_of_stock")));
     private static final String BUY = Side.BUY.value;
     private static final String SELL = Side.SELL.value;
 

@@ -23,6 +23,7 @@ import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -30,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.*;
+import static util.ReadConfig.dotenv;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Mockito Spy and Mock Behavior Tests")
@@ -44,7 +46,7 @@ public class TestMockSpy {
     private static final BigDecimal ORDER_PRICE = BigDecimal.valueOf(8.1);
     private static final int ORDER_QUANTITY = 300;
     private static final int EXPECTED_WRITE_RESULT = 100;
-    private static final int NO_OF_STOCKS = 2;
+    private static final int NO_OF_STOCKS = Integer.parseInt(Objects.requireNonNull(dotenv.get("no_of_stock")));
     
     private static final Logger log = LogManager.getLogger(TestMockSpy.class);
     
