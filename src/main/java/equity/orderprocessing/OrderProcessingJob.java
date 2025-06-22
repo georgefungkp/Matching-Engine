@@ -1,7 +1,7 @@
 package equity.orderprocessing;
 
 import equity.objectpooling.Order;
-import equity.objectpooling.Order.Action;
+import equity.objectpooling.Order.Side;
 import equity.objectpooling.OrderBook;
 import equity.objectpooling.OrderPoolManager;
 import org.apache.logging.log4j.LogManager;
@@ -108,6 +108,11 @@ public class OrderProcessingJob implements Runnable {
             if (orderMap.containsKey(orderPrice)) {
                 // Add to the existing price level
                 LinkedList<Order> orderList = orderMap.get(orderPrice);
+                if (orderList == null) {
+                    // Create new list if null
+                    orderList = new LinkedList<>();
+                    orderMap.put(orderPrice, orderList);
+                }
 
                 if (order.isMarketOrder()) {
                     // Market orders go to the front of the queue (FIFO)
@@ -128,7 +133,7 @@ public class OrderProcessingJob implements Runnable {
 
             log.debug("Added {} {} order: {}-{} {} {} @ ${} x {}",
                     order.getStockNo(),
-                    Action.getByValue(order.getBuyOrSell()),
+                    Side.getByValue(order.getBuyOrSell()),
                     order.getBrokerID(),
                     order.getClientOrdID(),
                     order.getBuyOrSell(), 
@@ -195,7 +200,7 @@ public class OrderProcessingJob implements Runnable {
             LinkedList<Order> orderList = orderMap.get(orderPrice);
 
             if (orderList == null) {
-                log.warn("Cannot remove order: No orders at price level {} for {}-{}", 
+                log.error("Cannot remove order: No orders at price level {} for {}-{}",
                         orderPrice, brokerID, clientOrdId);
                 return false;
             }

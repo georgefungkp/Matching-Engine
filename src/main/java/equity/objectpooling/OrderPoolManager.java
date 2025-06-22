@@ -1,6 +1,6 @@
 package equity.objectpooling;
 
-import equity.objectpooling.Order.Action;
+import equity.objectpooling.Order.Side;
 import equity.objectpooling.Order.OrderType;
 import org.jetbrains.annotations.NotNull;
 
@@ -27,7 +27,7 @@ public class OrderPoolManager {
         }
     }
 
-    public static Order requestOrderObj(String stockNo, String brokerID, String clientOrdID, OrderType orderType, Action buyOrSell, BigDecimal price, int quantity){
+    public static Order requestOrderObj(String stockNo, String brokerID, String clientOrdID, OrderType orderType, Side buyOrSell, BigDecimal price, int quantity){
         OrderObjectPool pool = mainOrderObjMap.get(stockNo);
         if (pool == null) {
             throw new IllegalArgumentException("Invalid stock number: " + stockNo + " No order object pool exists for this stock.");

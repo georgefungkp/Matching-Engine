@@ -38,13 +38,13 @@ public class Order {
     // === Constructors ===
 
     Order(String stockNo, String brokerID, String clientOrdID, OrderType orderType,
-          Action buyOrSell, BigDecimal price, int quantity) {
+          Side buyOrSell, BigDecimal price, int quantity) {
         this(stockNo, brokerID, clientOrdID, orderType, buyOrSell, price, quantity,
              ZonedDateTime.now(), ZonedDateTime.now());
     }
 
     Order(String stockNo, String brokerID, String clientOrdID, OrderType orderType,
-          Action buyOrSell, BigDecimal price, int quantity,
+          Side buyOrSell, BigDecimal price, int quantity,
           ZonedDateTime createdDateTime, ZonedDateTime lastEventDateTime) {
 
         // Validation
@@ -73,7 +73,7 @@ public class Order {
      * Resets all mutable fields to new values while maintaining thread safety.
      */
     public void reset(String brokerID, String clientOrdID, OrderType orderType,
-                      Action buyOrSell, BigDecimal price, int quantity) {
+                      Side buyOrSell, BigDecimal price, int quantity) {
         Objects.requireNonNull(brokerID, "Broker ID cannot be null");
         Objects.requireNonNull(clientOrdID, "Client order ID cannot be null");
         Objects.requireNonNull(orderType, "Order type cannot be null");
@@ -256,6 +256,9 @@ public class Order {
 
     // === Order Side Check Methods ===
 
+    public Side getSide() {
+        return Side.getByValue(this.buyOrSell);
+    }
     /**
      * Checks if this order is a buy order (bid).
      * Buy orders represent demand side in the market.
@@ -263,7 +266,7 @@ public class Order {
      * @return true if this is a buy/bid order, false otherwise
      */
     public boolean isBuyOrder() {
-        return Action.BUY.value.equals(this.buyOrSell);
+        return Side.BUY.value.equals(this.buyOrSell);
     }
 
     /**
@@ -283,7 +286,7 @@ public class Order {
      * @return true if this is a sell/ask order, false otherwise
      */
     public boolean isSellOrder() {
-        return Action.SELL.value.equals(this.buyOrSell);
+        return Side.SELL.value.equals(this.buyOrSell);
     }
 
     /**
@@ -355,15 +358,15 @@ public class Order {
         }
     }
 
-    public enum Action {
+    public enum Side {
         BUY("B", "Buy"),
         SELL("S", "Sell");
 
         // Mapping String value to enum
-        private static final Map<String, Action> internalMap = new HashMap<>();
+        private static final Map<String, Side> internalMap = new HashMap<>();
 
         static {
-            for (Action a : Action.values()) {
+            for (Side a : Side.values()) {
                 internalMap.put(a.value, a);
             }
         }
@@ -371,13 +374,13 @@ public class Order {
         public final String value;
         public final String description;
 
-        Action(String value, String description) {
+        Side(String value, String description) {
             this.value = value;
             this.description = description;
         }
 
         // Static getter method for retrieving enum by value.
-        public static Action getByValue(String value) {
+        public static Side getByValue(String value) {
             return internalMap.get(value);
         }
 

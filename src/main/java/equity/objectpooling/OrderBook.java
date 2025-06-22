@@ -1,6 +1,6 @@
 package equity.objectpooling;
 
-import equity.objectpooling.Order.Action;
+import equity.objectpooling.Order.Side;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -8,7 +8,6 @@ import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -106,7 +105,7 @@ public class OrderBook {
      */
     public void showMapWithoutLocking(String buyOrSell) {
         ConcurrentSkipListMap<BigDecimal, LinkedList<Order>> orderMap;
-        if (Action.getByValue(buyOrSell) == Action.BUY) {
+        if (Side.getByValue(buyOrSell) == Side.BUY) {
             orderMap = bidMap;
         } else {
             orderMap = askMap;
@@ -119,11 +118,29 @@ public class OrderBook {
         log.debug("the last price: {}", orderMap.lastKey());
         for (Entry<BigDecimal, LinkedList<Order>> entry : orderMap.entrySet()) {
             log.debug("Orders of {} at price level {} ", stockNo, entry.getKey());
-            entry.getValue().forEach(a -> log.debug("Broker ID {} Client Brk ID {} Qty {} ", a.getBrokerID(), a.getClientOrdID(), a.getRemainingQty()));
-            log.debug("The time of head is {}", Objects.requireNonNull(entry.getValue().peek()).getCreatedDateTime());
+            if (entry.getValue() == null) {
+                log.error("Empty list of orders at price level {} ", entry.getKey());
+            }
+            entry.getValue().forEach(a -> log.debug("{}-{} {}@{} ", a.getBrokerID(), a.getClientOrdID(), a.getRemainingQty(), a.getPrice().get()));
+            entry.getValue().forEach(a -> { if (a.getPrice().get().compareTo(entry.getKey()) != 0)
+                log.error("Doesn't match {}: {}-{} {}@{} ", entry.getKey(), a.getBrokerID(), a.getClientOrdID(), a.getRemainingQty(), a.getPrice().get());});
+//            log.debug("The time of head is {}", Objects.requireNonNull(entry.getValue().peek()).getCreatedDateTime());
         }
     }
 
+    public void checkAndCleanUpPriceLevel(BigDecimal price, Side side) {
+        if (price == null || side == null) {
+            log.error("Null price or side in checkAndCleanUpPriceLevel");
+            return;
+        }
+
+        ConcurrentSkipListMap<BigDecimal, LinkedList<Order>> orderMap = (side == Side.BUY) ? bidMap : askMap;
+        // Clean up empty price levels
+        LinkedList<Order> orderList = orderMap.get(price);
+        if (orderList != null && orderList.isEmpty()) {
+            orderMap.remove(price);
+        }
+    }
 
     /**
      * Retrieves the bid order book map, which is a sorted concurrent map with bid prices as keys and a list of corresponding bid orders as values.
@@ -158,8 +175,8 @@ public class OrderBook {
                          bidMap.isEmpty() ? null : bidMap.lastKey(),
                          askMap.isEmpty() ? null : askMap.lastKey());
                 // Show bid and ask maps
-                showMapWithoutLocking(Action.BUY.value);
-                showMapWithoutLocking(Action.SELL.value);
+                showMapWithoutLocking(Side.BUY.value);
+                showMapWithoutLocking(Side.SELL.value);
                 log.debug("\n");
             } finally {
                 askLock.readLock().unlock();

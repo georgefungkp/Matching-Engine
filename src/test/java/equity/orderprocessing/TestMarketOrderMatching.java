@@ -2,7 +2,7 @@ package equity.orderprocessing;
 
 import equity.client.RandomOrderRequestGenerator;
 import equity.objectpooling.*;
-import equity.objectpooling.Order.Action;
+import equity.objectpooling.Order.Side;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -23,8 +23,8 @@ import static org.junit.jupiter.api.Assertions.*;
 public class TestMarketOrderMatching {
 
     // Test Constants
-    private static final String BUY = Action.BUY.value;
-    private static final String SELL = Action.SELL.value;
+    private static final String BUY = Side.BUY.value;
+    private static final String SELL = Side.SELL.value;
     private static final String STOCK_1 = "00001";
     private static final String STOCK_2 = "00002";
     private static final String BROKER_1 = "Broker 1";

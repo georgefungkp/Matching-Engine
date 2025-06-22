@@ -2,7 +2,7 @@ package equity.orderprocessing;
 
 import equity.client.RandomOrderRequestGenerator;
 import equity.objectpooling.*;
-import equity.objectpooling.Order.Action;
+import equity.objectpooling.Order.Side;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -39,8 +39,8 @@ public class TestOrderMatching {
     private static final String CLIENT_SELL_ORDER_3 = "S003";
     private static final String CLIENT_SELL_ORDER_4 = "S004";
     private static final String CLIENT_BUY_ORDER_5 = "005";
-    private static final String BUY = Action.BUY.value;
-    private static final String SELL = Action.SELL.value;
+    private static final String BUY = Side.BUY.value;
+    private static final String SELL = Side.SELL.value;
     private static final BigDecimal PRICE_8_1 = BigDecimal.valueOf(8.1).setScale(4, RoundingMode.HALF_UP);;
     private static final BigDecimal PRICE_8_2 = BigDecimal.valueOf(8.2).setScale(4, RoundingMode.HALF_UP);;
     private static final BigDecimal PRICE_8_3 = BigDecimal.valueOf(8.3).setScale(4, RoundingMode.HALF_UP);;

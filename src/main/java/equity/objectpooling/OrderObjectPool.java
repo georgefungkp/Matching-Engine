@@ -1,6 +1,6 @@
 package equity.objectpooling;
 
-import equity.objectpooling.Order.Action;
+import equity.objectpooling.Order.Side;
 import equity.objectpooling.Order.OrderType;
 import equity.requesthandling.MatchingEngine;
 import org.apache.logging.log4j.LogManager;
@@ -37,7 +37,7 @@ public class OrderObjectPool {
      * @param quantity the quantity of the order
      * @return the Order object
      */
-    public synchronized Order makeANewOrder(String brokerID, String clientOrdID, OrderType orderType, Action direction, BigDecimal price, int quantity){
+    public synchronized Order makeANewOrder(String brokerID, String clientOrdID, OrderType orderType, Side direction, BigDecimal price, int quantity){
         Order newOrder;
         if (freeOrderList.isEmpty()){
             newOrder = new Order(stockNo, brokerID, clientOrdID, orderType, direction, price, quantity);

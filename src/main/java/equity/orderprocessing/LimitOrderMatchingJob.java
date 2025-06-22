@@ -11,6 +11,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.LinkedList;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -23,6 +24,7 @@ import java.util.concurrent.TimeUnit;
  * and publishes market data updates.
  */
 public class LimitOrderMatchingJob implements Runnable {
+    private static final boolean LOG_ENABLED = false;
     private static final Logger log = LogManager.getLogger(LimitOrderMatchingJob.class);
     private static final int PROCESSING_DELAY_MS = 1;
     private final String stockNo;
@@ -97,8 +99,9 @@ public class LimitOrderMatchingJob implements Runnable {
     private boolean shouldMatchingSkipped() {
         // Both bid and ask maps must have orders
         if (askMap.isEmpty() || bidMap.isEmpty()) {
-//            log.debug("Skipping matching for stock {}: bid empty={}, ask empty={}",
-//                stockNo, bidMap.isEmpty(), askMap.isEmpty());
+            if (LOG_ENABLED)
+                log.debug("Skipping matching for stock {}: bid empty={}, ask empty={}",
+                    stockNo, bidMap.isEmpty(), askMap.isEmpty());
             return true;
         }
 
@@ -108,7 +111,7 @@ public class LimitOrderMatchingJob implements Runnable {
         // For a match, best bid price must be >= best ask price
         boolean shouldSkip = bestAsk.compareTo(bestBid) > 0;
 
-        if (shouldSkip) {
+        if (shouldSkip && LOG_ENABLED) {
             log.debug("No matching possible for stock {}: best bid {} < best ask {}",
                 stockNo, bestBid, bestAsk);
         }
@@ -294,16 +297,29 @@ public class LimitOrderMatchingJob implements Runnable {
                 }
 
                 // Get the lists of orders at the best price levels
-                LinkedList<Order> bestBidOrderList = bidMap.lastEntry().getValue();
-                LinkedList<Order> bestAskOrderList = askMap.lastEntry().getValue();
+                Entry<BigDecimal, LinkedList<Order>> lastBidEntry =  bidMap.lastEntry();
+                Entry<BigDecimal, LinkedList<Order>> lastAskEntry =  askMap.lastEntry();
+                LinkedList<Order> bestBidOrderList = lastBidEntry.getValue();
+                LinkedList<Order> bestAskOrderList = lastAskEntry.getValue();
+
+                // Add null checks
+                if (bestBidOrderList == null || bestAskOrderList == null) {
+                    log.error("Null order list found at price level for stock {}", stockNo);
+                    return;
+                }
 
                 // Get the top orders
                 topBid = bestBidOrderList.peekFirst();
                 topAsk = bestAskOrderList.peekFirst();
 
+                log.debug("{} {}", lastBidEntry.getKey(), lastAskEntry.getKey());
+                log.debug("topBid {}", topBid);
+                log.debug("topAsk {}", topAsk);
+
+
                 // Validate orders exist
                 if (topBid == null || topAsk == null) {
-                    log.warn("Null order found when matching orders for stock {}", stockNo);
+                    log.error("Null order found when matching orders for stock {}", stockNo);
                     return;
                 }
 
@@ -311,7 +327,10 @@ public class LimitOrderMatchingJob implements Runnable {
                 filledQty = Math.min(topBid.getRemainingQty().get(), topAsk.getRemainingQty().get());
 
                 // Use ask price for the trade (price-time priority)
-                tradePrice = askMap.lastEntry().getKey();
+                // Choose lower price between ask and bid, depends on market
+                tradePrice = topAsk.getPrice().get();
+                if (tradePrice.compareTo(askMap.lastEntry().getKey()) != 0)
+                    log.error("Trade price {} not matching with ask price {} for stock {}", tradePrice, askMap.lastEntry().getKey(),stockNo);
 
                 // Update newer average price, updates filled quantity, remaining quantity, and timestamp of the order
                 updateOrderAfterFill(topBid, filledQty, tradePrice, ZonedDateTime.now());
@@ -331,7 +350,11 @@ public class LimitOrderMatchingJob implements Runnable {
 
                 // Handle completed orders
                 processCompletedOrder(topBid, bestBidOrderList);
+                if (bestBidOrderList.isEmpty())
+                    bidMap.remove(lastBidEntry.getKey());
                 processCompletedOrder(topAsk, bestAskOrderList);
+                if (bestAskOrderList.isEmpty())
+                    askMap.remove(lastAskEntry.getKey());
 
                 if (topBid.isMarketOrder())
                     updateBestPriceOfMarketOrder(topBid);
@@ -360,22 +383,21 @@ public class LimitOrderMatchingJob implements Runnable {
      * @param orderList The list containing the order
      */
     private void processCompletedOrder(Order order, LinkedList<Order> orderList) {
+        if (order == null || orderList == null) {  // Add null check
+            log.error("Null order or orderList in processCompletedOrder");
+            return;
+        }
+
         if (order.getRemainingQty().get() == 0) {
-            Order completedOrder = orderList.pollFirst();
-            if (completedOrder != null) {
-                String orderKey = completedOrder.getBrokerID() + "-" + completedOrder.getClientOrdID();
+            if (orderList.remove(order)) {
+                String orderKey = order.getBrokerID() + "-" + order.getClientOrdID();
                 orderObjMapper.remove(orderKey);
-                OrderPoolManager.returnOrderObj(completedOrder);
+                OrderPoolManager.returnOrderObj(order);
                 log.debug("Completed order removed: {}", orderKey);
             }
+            // If the price level is now empty, remove it from the map
+//            orderBook.checkAndCleanUpPriceLevel(tradePrice, order.getSide());
         }
-        // Clean up empty price levels
-        if (orderList.isEmpty())
-            if (order.isBuyOrder()) {
-                bidMap.pollLastEntry();
-            }else{
-                askMap.pollLastEntry();
-            }
     }
 
     /**

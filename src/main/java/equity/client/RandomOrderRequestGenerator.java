@@ -2,7 +2,7 @@ package equity.client;
 
 import equity.objectpooling.OrderPoolManager;
 import equity.objectpooling.Order;
-import equity.objectpooling.Order.Action;
+import equity.objectpooling.Order.Side;
 import equity.objectpooling.Order.OrderType;
 
 import java.math.BigDecimal;
@@ -25,11 +25,11 @@ public class RandomOrderRequestGenerator {
 			brokerID = String.format("%03d", randomSeed.nextInt(1,10) + 1);
 		if (clientOrdID == null)
 			clientOrdID = String.format("%05d", randomSeed.nextInt(1,10) + 1);
-		Action action;
+		Side side;
 		if (direction == null)
-			action = randomSeed.nextBoolean() ? Action.BUY : Action.SELL;
+			side = randomSeed.nextBoolean() ? Side.BUY : Side.SELL;
 		else
-			action = Action.getByValue(direction);
+			side = Side.getByValue(direction);
 		
 		if (price == null) {
 			double randomPrice = randomSeed.nextDouble(0.1, 0.5) * 100;
@@ -40,7 +40,7 @@ public class RandomOrderRequestGenerator {
 			qty = randomSeed.nextInt(1,9) * 10;
 		OrderType orderType = OrderType.LIMIT;
 
-		return OrderPoolManager.requestOrderObj(stockNo, brokerID, clientOrdID, orderType, action, price, qty);
+		return OrderPoolManager.requestOrderObj(stockNo, brokerID, clientOrdID, orderType, side, price, qty);
 	}
 
 	public static Order getNewMarketOrder(String stockNo, String brokerID, String clientOrdID, String direction, Integer qty) {
@@ -50,16 +50,16 @@ public class RandomOrderRequestGenerator {
 			brokerID = String.format("%03d", randomSeed.nextInt(10) + 1);
 		if (clientOrdID == null)
 			clientOrdID = String.format("%05d", randomSeed.nextInt(10) + 1);
-		Action action;
+		Side side;
 		if (direction == null)
-			action = randomSeed.nextBoolean() ? Action.BUY : Action.SELL;
+			side = randomSeed.nextBoolean() ? Side.BUY : Side.SELL;
 		else
-			action = Action.getByValue(direction);
+			side = Side.getByValue(direction);
 		if (qty == null)
 			qty = randomSeed.nextInt(1000);
 		OrderType orderType = OrderType.MARKET;
 
-		return OrderPoolManager.requestOrderObj(stockNo, brokerID, clientOrdID, orderType, action, null, qty);
+		return OrderPoolManager.requestOrderObj(stockNo, brokerID, clientOrdID, orderType, side, null, qty);
 	}
 
 }

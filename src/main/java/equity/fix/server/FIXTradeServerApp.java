@@ -2,7 +2,7 @@ package equity.fix.server;
 
 import equity.objectpooling.OrderPoolManager;
 import equity.objectpooling.Order;
-import equity.objectpooling.Order.Action;
+import equity.objectpooling.Order.Side;
 import equity.objectpooling.Order.OrderType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -68,22 +68,22 @@ public class FIXTradeServerApp extends MessageCracker implements Application, Ru
         String clientOrdID = newOrder.getClOrdID().getValue();
         String brokerID = newOrder.getClOrdID().getValue();
         String stockNo = newOrder.getSymbol().getValue();
-        Action action = (newOrder.getSide().getValue() == BUY)? Action.BUY : Action.SELL;
+        Side side = (newOrder.getSide().getValue() == BUY)? Side.BUY : Side.SELL;
         OrderType orderType = (newOrder.getOrdType().getValue() == MARKET)? OrderType.MARKET: OrderType.LIMIT;
         double quantity = newOrder.getOrderQty().getValue();
         BigDecimal price = BigDecimal.valueOf(newOrder.getPrice().getValue());
 
         log.debug("Stock Code: {}", stockNo);
-        log.debug("Buy or Sell: {}", action);
+        log.debug("Buy or Sell: {}", side);
         log.debug("Quantity: {}", quantity);
         log.debug("Price: {}", price);
 
         try {
             // Send an Execution Report (8) to acknowledge the order
             sendExecutionReport(sessionID, clientOrdID, newOrder, new ExecType(ExecType.NEW), new OrdStatus(OrdStatus.NEW));
-            orderQueue.put(OrderPoolManager.requestOrderObj(stockNo, brokerID, clientOrdID, orderType, action,
+            orderQueue.put(OrderPoolManager.requestOrderObj(stockNo, brokerID, clientOrdID, orderType, side,
                     price, (int)quantity));
-            log.debug("Put the {} order of {} to the order queue", action, stockNo);
+            log.debug("Put the {} order of {} to the order queue", side, stockNo);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -102,7 +102,7 @@ public class FIXTradeServerApp extends MessageCracker implements Application, Ru
      * @param filledQty the quantity filled
      * @param execPrice the execution price
      */
-    public void sendExecutionReport(SessionID sessionID, String clientOrdID, String stockNo, Side side,
+    public void sendExecutionReport(SessionID sessionID, String clientOrdID, String stockNo, quickfix.field.Side side,
                                     ExecType execType, OrdStatus ordStatus, int filledQty, BigDecimal execPrice){
         ExecutionReport executionReport = new ExecutionReport(
             new OrderID(clientOrdID), // Broker-assigned order ID
@@ -131,7 +131,7 @@ public class FIXTradeServerApp extends MessageCracker implements Application, Ru
             new ExecID(String.valueOf(executionIDGenerator.getNextSequence())),  // Execution ID
             execType, // Execution type
             ordStatus, // Order status
-            new Side(newOrder.getSide().getValue()),
+            new quickfix.field.Side(newOrder.getSide().getValue()),
             new LeavesQty(newOrder.getOrderQty().getValue()), // No remaining quantity
             new CumQty(0), // Cumulative quantity filled
             new AvgPx(newOrder.getPrice().getValue()) // Average price

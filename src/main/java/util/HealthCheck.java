@@ -8,7 +8,7 @@ import java.util.concurrent.BlockingQueue;
 
 public class HealthCheck {
     private static final Logger log = LogManager.getLogger(HealthCheck.class);
-    private static final int QUEUE_WARNING_THRESHOLD = 100;
+    private static final int QUEUE_WARNING_THRESHOLD = 1000;
 
     public static void checkQueueHealth(BlockingQueue<Order> orderQueue) {
         int size = orderQueue.size();

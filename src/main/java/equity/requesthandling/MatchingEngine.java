@@ -4,7 +4,7 @@ import equity.externalparties.MarketDataJob;
 import equity.externalparties.ResultingTradeJob;
 import equity.fix.server.FIXTradeServerApp;
 import equity.objectpooling.*;
-import equity.objectpooling.Order.Action;
+import equity.objectpooling.Order.Side;
 import equity.objectpooling.Order.OrderType;
 import equity.orderprocessing.LimitOrderMatchingJob;
 import equity.orderprocessing.OrderProcessingJob;
@@ -143,7 +143,7 @@ public class MatchingEngine extends Thread {
 //				+ order.getOrderType() + ":" + order.getBuyOrSell() + ":"
 //				+ order.getPrice() + ":" + order.getQuantity();
         String[] tokens = value.split(":");
-        return OrderPoolManager.requestOrderObj(tokens[0], tokens[1], tokens[2], OrderType.getByValue(tokens[3]), Action.getByValue(tokens[4]), new BigDecimal(tokens[5]),
+        return OrderPoolManager.requestOrderObj(tokens[0], tokens[1], tokens[2], OrderType.getByValue(tokens[3]), Side.getByValue(tokens[4]), new BigDecimal(tokens[5]),
                 Integer.parseInt(tokens[6]));
     }
 

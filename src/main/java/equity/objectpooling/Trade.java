@@ -15,8 +15,8 @@ import java.util.Objects;
 public class Trade {
 
     // Immutable unique identifier for proper hashCode/equals
-    private static final SequenceGenerator TRADE_ID_GENERATOR = new SequenceGenerator();
-    private final int tradeId;
+    private static final SequenceGenerator TRADE_OBJ_ID_GENERATOR = new SequenceGenerator();
+    private final int tradeObjId;
 
     // Trade execution details (mutable for object pooling)
     private String buyBrokerID;
@@ -38,10 +38,10 @@ public class Trade {
     private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
 
     // === Constructor ===
-    Trade (){this.tradeId = TRADE_ID_GENERATOR.getNextSequence();}
+    Trade (){this.tradeObjId = TRADE_OBJ_ID_GENERATOR.getNextSequence();}
 
     Trade(Order bidOrder, Order askOrder, String stockNo, BigDecimal executedPrice, int executedQty, String executionDateTime) {
-        this.tradeId = TRADE_ID_GENERATOR.getNextSequence();
+        this.tradeObjId = TRADE_OBJ_ID_GENERATOR.getNextSequence();
         updateTradeData(bidOrder, askOrder, stockNo, executedPrice, executedQty, executionDateTime);
     }
 
@@ -73,7 +73,7 @@ public class Trade {
 
     // === Getters ===
 
-    public int getTradeId() { return tradeId; }
+    public int getTradeObjId() { return tradeObjId; }
     public String getBuyBrokerID() { return buyBrokerID; }
     public String getSellBrokerID() { return sellBrokerID; }
     public String getBuyOrderID() { return buyOrderID; }
@@ -151,7 +151,7 @@ public class Trade {
 
     @Override
     public String toString() {
-        return "Trade[" + tradeId + "]:" + getExecutionDateTimeAsString() +
+        return "Trade[" + tradeObjId + "]:" + getExecutionDateTimeAsString() +
                ":" + getStockNo() + ":" + getExecutedPrice() + ":" + getExecutedQty();
     }
 
@@ -160,11 +160,11 @@ public class Trade {
         if (this == obj) return true;
         if (obj == null || getClass() != obj.getClass()) return false;
         Trade trade = (Trade) obj;
-        return tradeId == trade.tradeId;
+        return tradeObjId == trade.tradeObjId;
     }
 
     @Override
     public int hashCode() {
-        return Integer.hashCode(tradeId);
+        return Integer.hashCode(tradeObjId);
     }
 }

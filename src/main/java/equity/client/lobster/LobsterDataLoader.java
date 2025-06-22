@@ -1,7 +1,7 @@
 package equity.client.lobster;
 
 import equity.client.Client;
-import equity.objectpooling.Order.Action;
+import equity.objectpooling.Order.Side;
 import equity.objectpooling.Order.OrderType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,13 +20,13 @@ import static util.ReadConfig.dotenv;
 
 public class LobsterDataLoader {
     private static final Logger log = LogManager.getLogger(LobsterDataLoader.class);
-    private static final int recordsToBeLoaded = 10;
+    private static final int recordsToBeLoaded = 200;
 
     public static void main(String[] args) throws IOException {
-//        String fileName = "00001_2012-06-21_34200000_57600000_message_10.csv";
-//        String filePath = "data sources/lobster/";
-        String fileName = "00001_message.csv";
-        String filePath = "data sources/00001/";
+        String fileName = "00001_2012-06-21_34200000_57600000_message_10.csv";
+        String filePath = "data sources/lobster/";
+//        String fileName = "00001_message.csv";
+//        String filePath = "data sources/00001/";
         String stockSymbol = fileName.split("_")[0];
         String brokerID = "LOBSTER";
 
@@ -52,7 +52,7 @@ public class LobsterDataLoader {
                     int direction = Integer.parseInt(fields[5]);
 
                     // Only process new limit orders (type 1)
-                    if (type != 1 && type != 4) continue;
+                    if (type != 1) continue;
 
                     // Create an order message
                     String message = createOrderMessage(
@@ -60,7 +60,7 @@ public class LobsterDataLoader {
                             brokerID,
                             orderId,
                             OrderType.LIMIT.value, // Order type
-                            direction == 1 ? Action.BUY.value : Action.SELL.value, // Buy/Sell
+                            direction == 1 ? Side.BUY.value : Side.SELL.value, // Buy/Sell
                             price.toString(),
                             String.valueOf(size)
                     );

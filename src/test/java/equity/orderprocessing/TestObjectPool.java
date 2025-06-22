@@ -4,7 +4,7 @@ import equity.client.RandomOrderRequestGenerator;
 import equity.externalparties.ResultingTradeJob;
 import equity.fix.server.FIXTradeServerApp;
 import equity.objectpooling.*;
-import equity.objectpooling.Order.Action;
+import equity.objectpooling.Order.Side;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -44,8 +44,8 @@ public class TestObjectPool {
     private static final int QUANTITY_200 = 200;
     private static final int QUANTITY_100 = 100;
     private static final int NO_OF_STOCKS = 2;
-    private static final String BUY = Action.BUY.value;
-    private static final String SELL = Action.SELL.value;
+    private static final String BUY = Side.BUY.value;
+    private static final String SELL = Side.SELL.value;
 
     // Test data structures
     private static final ConcurrentHashMap<String, Order> orderObjMapper = new ConcurrentHashMap<>();
