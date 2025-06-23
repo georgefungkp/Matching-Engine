@@ -38,8 +38,25 @@ List here the prerequisites and links to the installation procedure of each:
 |:-------------|:-------------------------|
 | Place Order  | O(log n)                 |
 | Cancel Order | O(1)                     |
+| Match Order  | O(1)                     |
 | Amend Order  | Qty O(1), Price O(log n) |
 | Search Order | O(1)                     |
+
+## Profiling
+CPU: Intel 12th Gen Core i7-12700F Memory: 16G
+### Samples
+Symbol: Apple 
+Time: 2012-06-21 09:30-16:00
+
+Symbol: AMZN
+Time: 2012-06-21 09:30-16:00
+
+| Symbol | Number of New Orders | Executed Trades | Time Used          |
+|:-------|:---------------------|:----------------|:-------------------|
+| APPL   | 27843                | 24882           | 29945 milliseconds |
+| AMZN   | 131954               | 106340          | 157864 milliseconds|
+
+
 
 ## Design Consideration
 - The time complexity of order handling is shown as below:

@@ -20,10 +20,10 @@ import static util.ReadConfig.dotenv;
 
 public class LobsterDataLoader {
     private static final Logger log = LogManager.getLogger(LobsterDataLoader.class);
-    private static final int recordsToBeLoaded = 200;
+    private static final int recordsToBeLoaded = -1;
 
     public static void main(String[] args) throws IOException {
-        String fileName = "00001_2012-06-21_34200000_57600000_message_10.csv";
+        String fileName = "APPL_2012-06-21_34200000_57600000_message_10.csv";
         String filePath = "data sources/lobster/";
 //        String fileName = "00001_message.csv";
 //        String filePath = "data sources/00001/";

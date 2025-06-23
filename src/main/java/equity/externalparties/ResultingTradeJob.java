@@ -35,7 +35,7 @@ public class ResultingTradeJob implements Runnable {
 
     public void processTradeData(Trade tradeData) throws InterruptedException,IOException{
 
-        Path path = Paths.get(dotenv.get("tradeData") + tradeData.getStockNo() + "_"
+        Path path = Paths.get(dotenv.get("tradeData") + "_" + tradeData.getStockNo() + "_"
                 + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + ".csv");
         try {
             if (fileChannelService.writeTradeToFile(tradeData, path) == 0)

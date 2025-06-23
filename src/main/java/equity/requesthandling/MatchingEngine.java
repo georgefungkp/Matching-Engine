@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static util.ReadConfig.dotenv;
+import static util.ReadConfig.getStocks;
 
 
 public class MatchingEngine extends Thread {
@@ -37,7 +38,6 @@ public class MatchingEngine extends Thread {
     private static final LinkedBlockingQueue<MarketData> marketDataQueue = new LinkedBlockingQueue<>();
     private static final LinkedBlockingQueue<Trade> resultingTradeQueue = new LinkedBlockingQueue<>();
     private final FIXTradeServerApp fixTradeServerApp;
-    private final int noOfStock;
     private static final HashMap<String, OrderBook> orderBooks = new HashMap<>();
     private static final ConcurrentHashMap<String, Order> orderObjMapper = new ConcurrentHashMap<>();
     private static final FileChannelService fileChannelService = new FileChannelService();
@@ -50,7 +50,6 @@ public class MatchingEngine extends Thread {
         fixTradeServerApp = new FIXTradeServerApp(orderQueue);
         new Thread(fixTradeServerApp).start();
         log.debug("Number of available threads in this machine: {}", noOfAvailableThreads);
-        noOfStock = Integer.parseInt(Objects.requireNonNull(dotenv.get("no_of_stock")));
     }
 
     public static void main(String[] args) {
@@ -65,9 +64,8 @@ public class MatchingEngine extends Thread {
      * and a LimitOrderMatchingJob is executed on that thread to match bID and ask orders.
      */
     private void startOrderMatchingJobs(OrderProcessingJob orderProcessingJob){
-        for (int i=1;i<=noOfStock;i++) {
-            String stockId = String.format("%05d", i);
-            OrderBook orderBook = new OrderBook(stockId, "Stock " + i);
+        for (String stockId: getStocks()) {
+            OrderBook orderBook = new OrderBook(stockId, "Stock " + stockId);
             orderBooks.put(stockId, orderBook);
 
             LimitOrderMatchingJob matchingJob = new LimitOrderMatchingJob(
@@ -91,8 +89,8 @@ public class MatchingEngine extends Thread {
         OrderProcessingJob orderProcessingJob = new OrderProcessingJob(orderQueue, orderBooks, orderObjMapper);
         startOrderMatchingJobs(orderProcessingJob);
         new Thread(orderProcessingJob).start();
-        new Thread(new MarketDataJob(marketDataQueue,fileChannelService)).start();
-        new Thread(new ResultingTradeJob(resultingTradeQueue, this.fixTradeServerApp, fileChannelService)).start();
+        new Thread(new MarketDataJob(marketDataQueue,fileChannelService), "MarketData").start();
+        new Thread(new ResultingTradeJob(resultingTradeQueue, this.fixTradeServerApp, fileChannelService), "TradeData").start();
     }
 
 

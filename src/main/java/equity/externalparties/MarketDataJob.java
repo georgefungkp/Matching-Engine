@@ -6,7 +6,6 @@ import org.apache.logging.log4j.Logger;
 import util.FileChannelService;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
@@ -20,6 +19,7 @@ public class MarketDataJob implements Runnable {
     private final LinkedBlockingQueue<MarketData> marketDataQueue;
     FileChannelService fileChannelService;
     private boolean listening = true;
+    private boolean writeToFile = false;
 
     public MarketDataJob(LinkedBlockingQueue<MarketData> marketDataQueue, FileChannelService fileChannelService) {
         this.marketDataQueue = marketDataQueue;
@@ -38,10 +38,9 @@ public class MarketDataJob implements Runnable {
             try {
                 MarketData data = marketDataQueue.take();
 
-                Path path = Paths.get(dotenv.get("marketData") + data.stockNo() + "_"
+                Path path = Paths.get(dotenv.get("marketData") + "_" + data.stockNo() + "_"
                         + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + ".txt");
-                Files.deleteIfExists(path);
-                if (fileChannelService.writeMarketDataToFile(data, path) ==0)
+                if (writeToFile && fileChannelService.writeMarketDataToFile(data, path) ==0)
                     log.error("Cannot write log to {}", path);
             } catch (InterruptedException | IOException e) {
                 log.error(e);

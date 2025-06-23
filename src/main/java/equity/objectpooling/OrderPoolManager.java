@@ -1,15 +1,14 @@
 package equity.objectpooling;
 
-import equity.objectpooling.Order.Side;
 import equity.objectpooling.Order.OrderType;
+import equity.objectpooling.Order.Side;
 import org.jetbrains.annotations.NotNull;
 
 import java.math.BigDecimal;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static util.ReadConfig.dotenv;
+import static util.ReadConfig.getStocks;
 
 /**
  * A class responsible for managing orders through an object pool mechanism.
@@ -20,10 +19,9 @@ public class OrderPoolManager {
     private static final Map<String, TradeObjectPool> mainTradeObjMap = new ConcurrentHashMap<>();
 
     static {
-        int noOfStock = Integer.parseInt(Objects.requireNonNull(dotenv.get("no_of_stock")));
-        for (int i = 1; i <= noOfStock; i++) {
-            mainOrderObjMap.put(java.lang.String.format("%05d", i), new OrderObjectPool(java.lang.String.format("%05d", i)));
-            mainTradeObjMap.put(java.lang.String.format("%05d", i), new TradeObjectPool(java.lang.String.format("%05d", i)));
+        for (String stockId: getStocks()) {
+            mainOrderObjMap.put(stockId, new OrderObjectPool(stockId));
+            mainTradeObjMap.put(stockId, new TradeObjectPool(stockId));
         }
     }
 

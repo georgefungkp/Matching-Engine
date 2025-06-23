@@ -438,8 +438,8 @@ public class LimitOrderMatchingJob implements Runnable {
                 bestAsk,
                 tradePrice,
                 timestamp,
-                bidMap,  // Safe because ConcurrentSkipListMap is thread-safe for reading
-                askMap);
+                bidMap.clone(),  // Clone to store a snapshot
+                askMap.clone()); // Clone to store a snapshot
 
         // Add to queue (might block, but we're not holding any locks)
         marketDataQueue.put(marketData);

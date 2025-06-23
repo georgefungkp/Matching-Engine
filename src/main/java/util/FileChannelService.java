@@ -22,7 +22,7 @@ public class FileChannelService {
     private static final SequenceGenerator TRADE_ID_GENERATOR = new SequenceGenerator();
 
     public int writeTradeToFile(Trade tradeData, Path path) throws IOException {
-        // Trade seq Id, Stock No, Bid Broker Id, Bid Order id, Sell Broker Id, Sell order id, Executed Price, Qty, Executed Time\
+        // Trade seq ID, Stock No, Bid Broker ID, Bid Order ID, Sell Broker ID, Sell order IDs, Executed Price, Qty, Executed Time\
         String message = String.format("%s, %s,%s,%s,%s,%s,%s %s %s\r\n",
                 TRADE_ID_GENERATOR.getNextSequence(),
                 tradeData.getStockNo(),
