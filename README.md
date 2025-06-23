@@ -43,7 +43,7 @@ List here the prerequisites and links to the installation procedure of each:
 | Search Order | O(1)                     |
 
 ## Profiling
-CPU: Intel 12th Gen Core i7-12700F Memory: 16G
+CPU: Intel 12th Gen Core i7-12700F Memory: 16G GC: G1GC
 ### Samples
 Symbol: Apple 
 Time: 2012-06-21 09:30-16:00
