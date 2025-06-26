@@ -19,8 +19,15 @@ run {
         '-XX:+UseZGC',
         '-Xms18g',
         '-Xmx18g',
-        '-XX:ConcGCThreads=4',
+        '-XX:ConcGCThreads=12',
         '-XX:+AlwaysPreTouch',
+        '-XX:+ZGenerational',
+        '-XX:ZAllocationSpikeTolerance=1.5',
+        '-XX:MaxGCPauseMillis=1',
+        '-XX:ParallelGCThreads=16',
+        '-XX:ZCollectionInterval=3',
+        '-XX:ZFragmentationLimit=10',
+        '-XX:ZUncommitDelay=3',
         '-XX:+PrintCommandLineFlags'
     ]
 }
@@ -30,8 +37,15 @@ tasks.withType(JavaExec) {
         '-XX:+UseZGC',
         '-Xms18g',
         '-Xmx18g',
-        '-XX:ConcGCThreads=4',
-        '-XX:+AlwaysPreTouch'
+        '-XX:ConcGCThreads=12',
+        '-XX:+AlwaysPreTouch',
+        '-XX:+ZGenerational',
+        '-XX:ZAllocationSpikeTolerance=1.5',
+        '-XX:MaxGCPauseMillis=1',
+        '-XX:ParallelGCThreads=16',
+        '-XX:ZCollectionInterval=3',
+        '-XX:ZFragmentationLimit=10',
+        '-XX:ZUncommitDelay=3'
     ]
 }
 

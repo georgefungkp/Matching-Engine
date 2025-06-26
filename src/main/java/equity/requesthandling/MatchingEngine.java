@@ -4,8 +4,8 @@ import equity.externalparties.MarketDataJob;
 import equity.externalparties.ResultingTradeJob;
 import equity.fix.server.FIXTradeServerApp;
 import equity.objectpooling.*;
-import equity.objectpooling.Order.Side;
 import equity.objectpooling.Order.OrderType;
+import equity.objectpooling.Order.Side;
 import equity.orderprocessing.LimitOrderMatchingJob;
 import equity.orderprocessing.OrderProcessingJob;
 import org.apache.logging.log4j.LogManager;
@@ -25,6 +25,8 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import static util.HealthCheck.printGCStats;
+import static util.HealthCheck.printJVMFlags;
 import static util.ReadConfig.dotenv;
 import static util.ReadConfig.getStocks;
 
@@ -54,6 +56,8 @@ public class MatchingEngine extends Thread {
 
     public static void main(String[] args) {
         MatchingEngine server = new MatchingEngine();
+        printJVMFlags();
+        printGCStats();
         server.startProcessingJobs();
         server.start();
     }

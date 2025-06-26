@@ -32,7 +32,7 @@ List here the prerequisites and links to the installation procedure of each:
 - [Java SDK](https://www.oracle.com/java/technologies/downloads/)
 - An IDE of your choice (Although this project was developed using Intellij IDEA)
 
-## Time Complexity of main operations
+### Time Complexity of main operations
 
 | Operation    | Time Complexity          |
 |:-------------|:-------------------------|
@@ -42,20 +42,56 @@ List here the prerequisites and links to the installation procedure of each:
 | Amend Order  | Qty O(1), Price O(log n) |
 | Search Order | O(1)                     |
 
-## Profiling
-CPU: Intel 12th Gen Core i7-12700F Memory: 16G GC: G1GC
-### Samples
-Symbol: Apple 
-Time: 2012-06-21 09:30-16:00
+## Performance Profiling Report
 
-Symbol: AMZN
-Time: 2012-06-21 09:30-16:00
+### Garbage Collector Performance Analysis
+### Test Environment Specifications
+- Hardware:
+  * CPU: Intel 12th Gen Core i7-12700F
+  * Memory: 16GB DDR4
+- Software:
+  * Java Runtime: OpenJDK 22
+  * OS: Linux Kernel 6.4
+  * JVM Build: 22+36-2088
 
-| Symbol | Number of New Orders | Executed Trades | Time Used          |
-|:-------|:---------------------|:----------------|:-------------------|
-| APPL   | 27843                | 24882           | 29945 milliseconds |
-| AMZN   | 131954               | 106340          | 157864 milliseconds|
+### Market Data Specifications
+- Source: LOBSTER (Level II Market Data)
+- Exchange: NASDAQ
+- Trading Session: June 21, 2012 (09:30 - 16:00 ET)
+- Test Securities:
+  * Apple Inc. (AAPL)
+  * Amazon.com Inc. (AMZN)
 
+### Garbage Collector Configurations
+
+#### G1GC Configuration
+```properties
+-XX:+UseG1GC -Xms18g -Xmx18g -XX:ConcGCThreads=12 -XX:+AlwaysPreTouch
+```
+#### ZGC Configuration 1
+```properties
+-XX:+UseZGC -Xms18g -Xmx18g -XX:ConcGCThreads=12 -XX:+AlwaysPreTouch
+```
+#### ZGC Configuration 2
+```properties
+-XX:+UseZGC -Xms18g -Xmx18g -XX:ConcGCThreads=12 -XX:+AlwaysPreTouch \
+  -XX:+ZGenerational -XX:ZAllocationSpikeTolerance=2.0 -XX:MaxGCPauseMillis=1 -XX:ParallelGCThreads=16 -XX:ZCollectionInterval=5 -XX:ZFragmentationLimit=10
+```
+
+| Symbol   | Order Volume | Execution Rate | G1GC (ms) | ZGC - config 1 (ms) | ZGC - config 2 (ms) |
+|:---------|:-------------|:---------------|:----------|:--------------------|:--------------------|
+| AAPL     | 27,843       | 89.36%         | 27,767    | 28,367              | 27,661              |
+| AMZN     | 131,954      | 80.59%         | 135,135   | 190,101             | 129,629             |
+
+#### Performance Analysis
+- Under the similar VM options, the performance of G1GC is better than ZGC (esp on large dataset).
+- ZGC's design optimizations become more apparent with larger heap sizes (>100GB)
+- Smaller heap sizes require careful ZGC parameter tuning for optimal performance (30% difference)
+ 
+### Conclusions
+The performance analysis reveals that while G1GC provides better out-of-the-box performance for medium-sized heaps, ZGC can achieve superior performance through careful tuning. The 31.8% performance improvement in ZGC through optimization demonstrates its potential, despite not operating in its optimal large-heap environment (>100GB).
+
+ 
 
 
 ## Design Consideration
