@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'application'
 }
 
 version = '1.0-SNAPSHOT'
@@ -7,6 +8,34 @@ version = '1.0-SNAPSHOT'
 repositories {
     mavenCentral()
 }
+
+application {
+    // Replace with your main class
+    mainClass = 'equity.requesthandling.MatchingEngine'
+}
+
+run {
+    jvmArgs = [
+        '-XX:+UseZGC',
+        '-Xms18g',
+        '-Xmx18g',
+        '-XX:ConcGCThreads=4',
+        '-XX:+AlwaysPreTouch',
+        '-XX:+PrintCommandLineFlags'
+    ]
+}
+
+tasks.withType(JavaExec) {
+    jvmArgs = [
+        '-XX:+UseZGC',
+        '-Xms18g',
+        '-Xmx18g',
+        '-XX:ConcGCThreads=4',
+        '-XX:+AlwaysPreTouch'
+    ]
+}
+
+
 
 dependencies {
     testImplementation platform('org.junit:junit-bom:5.10.0')
