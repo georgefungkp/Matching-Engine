@@ -18,11 +18,18 @@ public class Trade {
     private static final SequenceGenerator TRADE_OBJ_ID_GENERATOR = new SequenceGenerator();
     private final int tradeObjId;
 
+    // Trade sequence generator and number
+    private static final SequenceGenerator TRADE_SEQ_GENERATOR = new SequenceGenerator();
+    private long tradeSeqNo;
+
+
     // Trade execution details (mutable for object pooling)
     private String buyBrokerID;
     private String sellBrokerID;
     private String buyOrderID;
     private String sellOrderID;
+    private long internalBuyOrderSeqNo;
+    private long internalSellOrderSeqNo;
     private String stockNo;
     private BigDecimal executedPrice;
     private int executedQty;
@@ -38,8 +45,6 @@ public class Trade {
     private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
 
     // === Constructor ===
-    Trade (){this.tradeObjId = TRADE_OBJ_ID_GENERATOR.getNextSequence();}
-
     Trade(Order bidOrder, Order askOrder, String stockNo, BigDecimal executedPrice, int executedQty, String executionDateTime) {
         this.tradeObjId = TRADE_OBJ_ID_GENERATOR.getNextSequence();
         updateTradeData(bidOrder, askOrder, stockNo, executedPrice, executedQty, executionDateTime);
@@ -49,7 +54,6 @@ public class Trade {
 
     public void reset(Order bidOrder, Order askOrder, String stockNo,
                       BigDecimal executedPrice, int executedQty, String executionDateTime) {
-        // Note: tradeId remains unchanged - preserving identity
         updateTradeData(bidOrder, askOrder, stockNo, executedPrice, executedQty, executionDateTime);
     }
 
@@ -57,10 +61,14 @@ public class Trade {
                                 BigDecimal executedPrice, int executedQty, String executionDateTime) {
         validateInputs(bidOrder, askOrder, stockNo, executedPrice, executedQty, executionDateTime);
 
+        // Note: tradeObjId remains unchanged - preserving identity
+        this.tradeSeqNo = TRADE_SEQ_GENERATOR.getNextSequence();
         this.buyBrokerID = bidOrder.getBrokerID();
         this.sellBrokerID = askOrder.getBrokerID();
         this.buyOrderID = bidOrder.getClientOrdID();
         this.sellOrderID = askOrder.getClientOrdID();
+        this.internalBuyOrderSeqNo = bidOrder.getOrderSeqID();
+        this.internalSellOrderSeqNo = askOrder.getOrderSeqID();
         this.stockNo = stockNo;
         this.executedPrice = executedPrice.setScale(PRICE_SCALE, PRICE_ROUNDING);
         this.executedQty = executedQty;
@@ -74,6 +82,7 @@ public class Trade {
     // === Getters ===
 
     public int getTradeObjId() { return tradeObjId; }
+    public long getTradeSeqNo() { return tradeSeqNo; }
     public String getBuyBrokerID() { return buyBrokerID; }
     public String getSellBrokerID() { return sellBrokerID; }
     public String getBuyOrderID() { return buyOrderID; }
@@ -86,6 +95,9 @@ public class Trade {
     public BigDecimal getBuyOrderAvgExecutedPrice() { return buyOrderAvgExecutedPrice; }
     public int getSellOrderRemainingQty() { return sellOrderRemainingQty; }
     public BigDecimal getSellOrderAvgExecutedPrice() { return sellOrderAvgExecutedPrice; }
+    public long getInternalBuyOrderSeqNo() { return internalBuyOrderSeqNo; }
+    public long getInternalSellOrderSeqNo() { return internalSellOrderSeqNo; }
+
 
     // === Business Logic ===
 
