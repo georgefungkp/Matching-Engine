@@ -3,7 +3,6 @@ package equity.objectpooling;
 import equity.requesthandling.MatchingEngine;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import util.SequenceGenerator;
 
 import java.math.BigDecimal;
 import java.util.Iterator;
@@ -16,7 +15,6 @@ public class TradeObjectPool {
     private final Set<Trade> inUsedTradeObjList = ConcurrentHashMap.newKeySet();
     private final Set<Trade> freeTradeObjList = ConcurrentHashMap.newKeySet();
     private final String stockNo;
-    private final SequenceGenerator sequenceGenerator = new SequenceGenerator();
 
     public TradeObjectPool(String stockNo) {
         this.stockNo = stockNo;
