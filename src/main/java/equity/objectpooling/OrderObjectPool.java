@@ -1,16 +1,15 @@
 package equity.objectpooling;
 
-import equity.objectpooling.Order.Side;
 import equity.objectpooling.Order.OrderType;
+import equity.objectpooling.Order.Side;
 import equity.requesthandling.MatchingEngine;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import util.SequenceGenerator;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
 
 
 public class OrderObjectPool {
@@ -18,7 +17,6 @@ public class OrderObjectPool {
     private final Set<Order> inUsedOrderList = ConcurrentHashMap.newKeySet();
     private final Set<Order> freeOrderList = ConcurrentHashMap.newKeySet();
     private final String stockNo;
-    private final SequenceGenerator sequenceGenerator = new SequenceGenerator();
 
     public OrderObjectPool(String stockNo) {
         this.stockNo = stockNo;
