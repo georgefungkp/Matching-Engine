@@ -1,5 +1,7 @@
 package equity.objectpooling;
 
+import util.SequenceGenerator;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.ZonedDateTime;
@@ -18,11 +20,11 @@ public class Order {
     private String buyOrSell;
 
     // Order pricing and quantities with thread-safe atomic operations
-    private final AtomicReference<BigDecimal> price;
-    private final AtomicInteger quantity;
-    private AtomicInteger filledQty;
-    private AtomicInteger remainingQty;
-    private AtomicReference<BigDecimal> avgPrice;
+    private final AtomicReference<BigDecimal> price = new AtomicReference<>();
+    private final AtomicInteger quantity = new AtomicInteger(0);
+    private final AtomicInteger filledQty = new AtomicInteger(0);
+    private final AtomicInteger remainingQty = new AtomicInteger(0);
+    private final AtomicReference<BigDecimal> avgPrice = new AtomicReference<>();
 
     // Timestamps
     private ZonedDateTime createdDateTime;
@@ -32,53 +34,33 @@ public class Order {
     private static final int PRICE_SCALE = 4;
     private static final RoundingMode PRICE_ROUNDING = RoundingMode.HALF_UP;
 
+    private static final SequenceGenerator ORDER_SEQ_GENERATOR = new SequenceGenerator();
+    private int orderSeqID;
 
-
-
-    // === Constructors ===
 
     Order(String stockNo, String brokerID, String clientOrdID, OrderType orderType,
           Side buyOrSell, BigDecimal price, int quantity) {
-        this(stockNo, brokerID, clientOrdID, orderType, buyOrSell, price, quantity,
-             ZonedDateTime.now(), ZonedDateTime.now());
-    }
-
-    Order(String stockNo, String brokerID, String clientOrdID, OrderType orderType,
-          Side buyOrSell, BigDecimal price, int quantity,
-          ZonedDateTime createdDateTime, ZonedDateTime lastEventDateTime) {
-
-        // Validation
         this.stockNo = Objects.requireNonNull(stockNo, "Stock number cannot be null");
-        this.brokerID = Objects.requireNonNull(brokerID, "Broker ID cannot be null");
-        this.clientOrdID = Objects.requireNonNull(clientOrdID, "Client order ID cannot be null");
-        Objects.requireNonNull(orderType, "Order type cannot be null");
-        Objects.requireNonNull(buyOrSell, "Buy/Sell action cannot be null");
-
-        this.orderType = orderType.value;
-        this.buyOrSell = buyOrSell.value;
-        this.price = new AtomicReference<>(roundPrice(price));
-        this.quantity = new AtomicInteger(Math.max(0, quantity));
-        this.filledQty = new AtomicInteger(0);
-        this.remainingQty = new AtomicInteger(quantity); // Initialize remaining = total quantity
-        this.avgPrice = new AtomicReference<>(BigDecimal.ZERO);
-        this.createdDateTime = Objects.requireNonNull(createdDateTime, "Created date time cannot be null");
-        this.lastEventDateTime = Objects.requireNonNull(lastEventDateTime, "Last event date time cannot be null");
-    }
+        updateOrderData(brokerID, clientOrdID, orderType, buyOrSell, price, quantity);
+     }
 
 
     // === Object Pool Methods ===
-
     /**
      * Resets this order for reuse in object pooling.
      * Resets all mutable fields to new values while maintaining thread safety.
      */
     public void reset(String brokerID, String clientOrdID, OrderType orderType,
-                      Side buyOrSell, BigDecimal price, int quantity) {
-        Objects.requireNonNull(brokerID, "Broker ID cannot be null");
-        Objects.requireNonNull(clientOrdID, "Client order ID cannot be null");
-        Objects.requireNonNull(orderType, "Order type cannot be null");
-        Objects.requireNonNull(buyOrSell, "Buy/Sell action cannot be null");
+                     Side buyOrSell, BigDecimal price, int quantity) {
+        updateOrderData(brokerID, clientOrdID, orderType, buyOrSell, price, quantity);
+    }
 
+    public void updateOrderData(String brokerID, String clientOrdID, OrderType orderType,
+                      Side buyOrSell, BigDecimal price, int quantity) {
+
+        validateInputs(brokerID, clientOrdID, orderType, buyOrSell, price, quantity);
+
+        this.orderSeqID = ORDER_SEQ_GENERATOR.getNextSequence();
         this.brokerID = brokerID;
         this.clientOrdID = clientOrdID;
         this.orderType = orderType.value;
@@ -91,6 +73,17 @@ public class Order {
         ZonedDateTime now = ZonedDateTime.now();
         this.createdDateTime = now;
         this.lastEventDateTime = now;
+    }
+
+    public void validateInputs(String brokerID, String clientOrdID, OrderType orderType, Side buyOrSell, BigDecimal price, int quantity){
+        Objects.requireNonNull(brokerID, "Broker ID cannot be null");
+        Objects.requireNonNull(clientOrdID, "Client order ID cannot be null");
+        Objects.requireNonNull(orderType, "Order type cannot be null");
+        Objects.requireNonNull(buyOrSell, "Side cannot be null");
+        Objects.requireNonNull(price, "Price cannot be null");
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("Executed quantity must be positive: " + quantity);
+        }
     }
 
 
@@ -123,6 +116,9 @@ public class Order {
     public AtomicReference<BigDecimal> getAvgPrice() { return avgPrice; }
     public ZonedDateTime getCreatedDateTime() { return createdDateTime; }
     public ZonedDateTime getLastEventDateTime() { return lastEventDateTime; }
+    public int getOrderSeqID() { return orderSeqID; }
+
+
 
    // === Setter Methods ===
 
@@ -335,7 +331,7 @@ public class Order {
         private static final Map<String, OrderType> internalMap = new HashMap<>();
 
         static {
-            for (OrderType type : OrderType.values()) {
+            for (OrderType type : Order.OrderType.values()) {
                 internalMap.put(type.value, type);
             }
         }
