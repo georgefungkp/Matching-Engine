@@ -8,7 +8,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.LinkedList;
 import java.util.Map.Entry;
@@ -284,6 +283,7 @@ public class LimitOrderMatchingJob implements Runnable {
         Order topAsk;
         int filledQty;
         BigDecimal tradePrice;
+        ZonedDateTime matchTime = ZonedDateTime.now();
 
         // Acquire bid lock first to prevent deadlocks
         orderBook.getBidLock().writeLock().lock();
@@ -333,15 +333,15 @@ public class LimitOrderMatchingJob implements Runnable {
                     log.error("Trade price {} not matching with ask price {} for stock {}", tradePrice, askMap.lastEntry().getKey(),stockNo);
 
                 // Update newer average price, updates filled quantity, remaining quantity, and timestamp of the order
-                updateOrderAfterFill(topBid, filledQty, tradePrice, ZonedDateTime.now());
-                updateOrderAfterFill(topAsk, filledQty, tradePrice, ZonedDateTime.now());
+                updateOrderAfterFill(topBid, filledQty, tradePrice, matchTime);
+                updateOrderAfterFill(topAsk, filledQty, tradePrice, matchTime);
 
                 // Create a trade record
                 Trade trade = OrderPoolManager.requestTradeObj(
                         topBid, topAsk, orderBook.getStockNo(),
                         tradePrice,
                         filledQty,
-                        LocalDateTime.now().toString());
+                        matchTime.toString());
 
                 // Add trade to the queue
                 resultingTradeQueue.put(trade);
