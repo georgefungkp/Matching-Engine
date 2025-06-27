@@ -19,17 +19,18 @@ import java.util.Map.Entry;
 
 public class FileChannelService {
     private static final Logger log = LogManager.getLogger(FileChannelService.class);
-    private static final SequenceGenerator TRADE_ID_GENERATOR = new SequenceGenerator();
 
     public int writeTradeToFile(Trade tradeData, Path path) throws IOException {
         // Trade seq ID, Stock No, Bid Broker ID, Bid Order ID, Sell Broker ID, Sell order IDs, Executed Price, Qty, Executed Time\
-        String message = String.format("%s, %s,%s,%s,%s,%s,%s %s %s\r\n",
-                TRADE_ID_GENERATOR.getNextSequence(),
+        String message = String.format("%s, %s,%s,%s,%s,%s,%s,%s,%s,%s,%s\r\n",
+                tradeData.getTradeSeqNo(),
                 tradeData.getStockNo(),
                 tradeData.getBuyBrokerID(),
                 tradeData.getBuyOrderID(),
+                tradeData.getInternalBuyOrderSeqNo(),
                 tradeData.getSellBrokerID(),
                 tradeData.getSellOrderID(),
+                tradeData.getInternalSellOrderSeqNo(),
                 tradeData.getExecutedPrice(),
                 tradeData.getExecutedQty(),
                 tradeData.getExecutionDateTime());
