@@ -11,6 +11,7 @@ import equity.orderprocessing.OrderProcessingJob;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import util.FileChannelService;
+import util.FileResourcesUtils;
 import util.HealthCheck;
 
 import java.io.BufferedReader;
@@ -55,6 +56,7 @@ public class MatchingEngine extends Thread {
     }
 
     public static void main(String[] args) {
+        FileResourcesUtils.ensureDirectoryExists("logs");
         MatchingEngine server = new MatchingEngine();
         printJVMFlags();
         printGCStats();
