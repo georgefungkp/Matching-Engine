@@ -141,12 +141,12 @@ Conclusions
 | Operation               | PriorityQueue(Binary Heap) | TreeMap(Red-black Tree)    |
 |:------------------------|:---------------------------|:---------------------------|
 | Insert                  | O(log n)                   | O(log n)                   |  
-| Peek (Best Bid/Ask)     | O(1) (top element)         | O(1) (firstKey()/lastKey() |
+| Peek (Best Bid/Ask)     | O(1) (top element)         | O(log n) (firstKey()/lastKey() |
 | Remove                  | O(n)                       | O(log n)                   |
 | Search by Price         | O(n)                       | O(log n)                   |
 | Iterate in Sorted Order | O(n log n)                 | O(n)                       |
 
-- The data structure of order book is <b> Tree map </b> with <b> LinkedList </b>. So, the time complexity of a new limit price is O(log n), and first or last key is O(1) as Java always caches the leftmost/rightmost nodes. For cancellation, it's also O(log n). On average, Tree map is the best choice in JDK implementation.
+- The data structure of order book is <b> Tree map </b> with <b> LinkedList </b>. So, the time complexity of a new limit price is O(log n). For cancellation, it's also O(log n). On average, Tree map is the best choice in JDK implementation.
 <img src="images/PQvsTreeMap.jpg" width="500" height="200">
 - In the single-thread environment, TreeMap ensures the performance is O(log n). However, TreeMap may not be the best choice in the concurrency. It's not thread-safe and developer has to handle race conditions.
 So, I choose to use <b>ConcurrenctSkipListMap</b> to replace TreeMap as it is good for individual atomic operations. All basic operations (put, get, remove) are thread-safe by design 
