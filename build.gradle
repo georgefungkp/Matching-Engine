@@ -16,36 +16,21 @@ application {
 
 run {
     jvmArgs = [
-        '-XX:+UseZGC',
+        '-XX:+UseG1GC',
         '-Xms18g',
         '-Xmx18g',
         '-XX:ConcGCThreads=12',
-        '-XX:+AlwaysPreTouch',
-        '-XX:+ZGenerational',
-        '-XX:ZAllocationSpikeTolerance=1.5',
-        '-XX:MaxGCPauseMillis=1',
-        '-XX:ParallelGCThreads=16',
-        '-XX:ZCollectionInterval=3',
-        '-XX:ZFragmentationLimit=10',
-        '-XX:ZUncommitDelay=3',
-        '-XX:+PrintCommandLineFlags'
+        '-XX:+AlwaysPreTouch'
     ]
 }
 
 tasks.withType(JavaExec) {
     jvmArgs = [
-        '-XX:+UseZGC',
+        '-XX:+UseG1GC',
         '-Xms18g',
         '-Xmx18g',
         '-XX:ConcGCThreads=12',
-        '-XX:+AlwaysPreTouch',
-        '-XX:+ZGenerational',
-        '-XX:ZAllocationSpikeTolerance=1.5',
-        '-XX:MaxGCPauseMillis=1',
-        '-XX:ParallelGCThreads=16',
-        '-XX:ZCollectionInterval=3',
-        '-XX:ZFragmentationLimit=10',
-        '-XX:ZUncommitDelay=3'
+        '-XX:+AlwaysPreTouch'
     ]
 }
 
