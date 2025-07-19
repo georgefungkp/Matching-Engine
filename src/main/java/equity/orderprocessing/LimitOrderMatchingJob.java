@@ -1,6 +1,7 @@
 package equity.orderprocessing;
 
 import equity.objectpooling.*;
+import equity.objectpooling.Order.Side;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -408,6 +409,7 @@ public class LimitOrderMatchingJob implements Runnable {
      * @throws InterruptedException if interrupted while adding to the queue
      */
     private void sendMarketDataUpdate(BigDecimal tradePrice) throws InterruptedException {
+        MarketData marketData;
         // Capture market data snapshot under read locks
         BigDecimal bestBid;
         BigDecimal bestAsk;
@@ -421,25 +423,22 @@ public class LimitOrderMatchingJob implements Runnable {
                 // Get the current best prices
                 bestBid = orderBook.getBestBid();
                 bestAsk = orderBook.getBestAsk();
-
-                // Note: We reference the maps directly rather than copying them
-                // This is safe because ConcurrentSkipListMap is thread-safe for reads
+                // Create and queue market data update without holding any locks
+                marketData = new MarketData(
+                        stockNo,
+                        bestBid,
+                        bestAsk,
+                        tradePrice,
+                        timestamp,
+                        orderBook.getTextFormatOfOrderBook(Side.BUY), // Clone part of an order book to store a snapshot
+                        orderBook.getTextFormatOfOrderBook(Side.SELL) // Clone part of an order book to store a snapshot
+                );
             } finally {
                 orderBook.getAskLock().readLock().unlock();
             }
         } finally {
             orderBook.getBidLock().readLock().unlock();
         }
-
-        // Create and queue market data update without holding any locks
-        MarketData marketData = new MarketData(
-                stockNo,
-                bestBid,
-                bestAsk,
-                tradePrice,
-                timestamp,
-                bidMap.clone(),  // Clone to store a snapshot
-                askMap.clone()); // Clone to store a snapshot
 
         // Add to queue (might block, but we're not holding any locks)
         marketDataQueue.put(marketData);

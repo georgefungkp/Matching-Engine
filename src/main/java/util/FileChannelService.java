@@ -1,21 +1,18 @@
 package util;
 
 import equity.objectpooling.MarketData;
-import equity.objectpooling.Order;
 import equity.objectpooling.Trade;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.AbstractMap;
-import java.util.LinkedList;
-import java.util.Map.Entry;
+import java.time.ZonedDateTime;
 
 public class FileChannelService {
     private static final Logger log = LogManager.getLogger(FileChannelService.class);
@@ -44,16 +41,17 @@ public class FileChannelService {
         return noOfBytes;
     }
 
-    public int writeMarketDataToFile(MarketData data, Path path) throws IOException {
+    public int writeMarketDataToFile(@NotNull MarketData data, Path path) throws IOException {
         String bestBidTxt = (data.bestBid() == null) ? "" : data.bestBid().toString();
         String bestAskTxt = (data.bestAsk() == null) ? "" : data.bestAsk().toString();
         String lastTradePrice = (data.lastTradePrice() == null) ? "" : data.lastTradePrice().toString();
-        String message = "Stock Name:" + data.stockNo() + "\n"
+        String message = "Publish Date Time:" + ZonedDateTime.now()
+                + "Stock Name:" + data.stockNo() + "\n"
                 + "Best Bid Price:" + bestBidTxt + "\n"
                 + "Best Ask Price:" + bestAskTxt + "\n"
                 + "Last Trade Price:" + lastTradePrice + "\n"
-                + "Bid orders\n" + orderBookToTxt(data.bidMap())
-                + "Ask orders\n" + orderBookToTxt(data.askMap());
+                + "Bid orders\n" + data.bidMapOrdersStr()
+                + "Ask orders\n" + data.askMapOrdersStr();
 
         FileLock lock;
         int noOfBytes;
@@ -65,13 +63,5 @@ public class FileChannelService {
         return noOfBytes;
     }
 
-    public StringBuilder orderBookToTxt(AbstractMap<BigDecimal, LinkedList<Order>> orderBook) {
-        StringBuilder message = new StringBuilder();
-        for (Entry<BigDecimal, LinkedList<Order>> entry : orderBook.entrySet()) {
-            for (Order order : entry.getValue()) {
-                message.append(order.getBrokerID()).append("-").append(order.getClientOrdID()).append(" ").append(order.getPrice().get()).append(" ").append(order.getRemainingQty()).append("\n");
-            }
-        }
-        return message;
-    }
+
 }

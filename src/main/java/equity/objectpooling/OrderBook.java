@@ -19,7 +19,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class OrderBook {
     private static final Logger log = LogManager.getLogger(OrderBook.class);
-    // Each price has its own list of brokers
+    // Each price has its own list of the brokers
     // Bid order book
     private final ConcurrentSkipListMap<BigDecimal, LinkedList<Order>> bidMap = new ConcurrentSkipListMap<>();
     // Ask order book
@@ -35,6 +35,99 @@ public class OrderBook {
         log.debug("Creating order book of {}", desc);
         this.stockNo = stockNo;
         this.desc = desc;
+    }
+
+
+    public String getTextFormatOfOrderBook(Side side) {
+        ConcurrentSkipListMap<BigDecimal, LinkedList<Order>> orderMap;
+
+        if (side == Side.BUY) {
+            orderMap = bidMap;
+        } else {
+            orderMap = askMap;
+        }
+
+        StringBuilder message = new StringBuilder();
+        for (Entry<BigDecimal, LinkedList<Order>> entry : orderMap.entrySet()) {
+            for (Order order : entry.getValue()) {
+                message.append(order.getBrokerID()).append("-").append(order.getClientOrdID()).append(" ").append(order.getPrice().get()).append(" ").append(order.getRemainingQty()).append("\n");
+            }
+        }
+        return message.toString();
+    }
+
+
+    /**
+     * Displays the order map for the specified side (BUY or SELL) without applying any locking mechanism.
+     * This method logs relevant details about the order map, such as the first and last price levels,
+     * as well as details of the orders present at each price level. It also logs errors if any inconsistencies
+     * or empty order lists are found.
+     *
+     * @param side the side of the order book to display, either BUY or SELL
+     */
+    public void showMapWithoutLocking(Side side) {
+        ConcurrentSkipListMap<BigDecimal, LinkedList<Order>> orderMap;
+        if (side == Side.BUY) {
+            orderMap = bidMap;
+        } else {
+            orderMap = askMap;
+        }
+
+        if (orderMap.isEmpty())
+            return;
+        log.debug("{}-{} {}", this.stockNo, this.desc, side);
+        log.debug("the first price: {}", orderMap.firstKey());
+        log.debug("the last price: {}", orderMap.lastKey());
+        for (Entry<BigDecimal, LinkedList<Order>> entry : orderMap.entrySet()) {
+            log.debug("Orders of {} at price level {} ", stockNo, entry.getKey());
+            if (entry.getValue() == null) {
+                log.error("Empty list of orders at price level {} ", entry.getKey());
+            }
+            entry.getValue().forEach(a -> log.debug("{}-{} {}@{} ", a.getBrokerID(), a.getClientOrdID(), a.getRemainingQty(), a.getPrice().get()));
+            entry.getValue().forEach(a -> {
+                if (a.getPrice().get().compareTo(entry.getKey()) != 0)
+                    log.error("Doesn't match {}: {}-{} {}@{} ", entry.getKey(), a.getBrokerID(), a.getClientOrdID(), a.getRemainingQty(), a.getPrice().get());
+            });
+//            log.debug("The time of head is {}", Objects.requireNonNull(entry.getValue().peek()).getCreatedDateTime());
+        }
+    }
+
+    public void checkAndCleanUpPriceLevel(BigDecimal price, Side side) {
+        if (price == null || side == null) {
+            log.error("Null price or side in checkAndCleanUpPriceLevel");
+            return;
+        }
+
+        ConcurrentSkipListMap<BigDecimal, LinkedList<Order>> orderMap = (side == Side.BUY) ? bidMap : askMap;
+        // Clean up empty price levels
+        LinkedList<Order> orderList = orderMap.get(price);
+        if (orderList != null && orderList.isEmpty()) {
+            orderMap.remove(price);
+        }
+    }
+
+
+    public void showMap() {
+        // Acquire locks in a consistent order
+        bidLock.readLock().lock();
+        try {
+            askLock.readLock().lock();
+            try {
+                // Show the maps
+                log.debug("Order Map of {} Best bid: {} Best ask: {}",
+                        stockNo,
+                        bidMap.isEmpty() ? null : bidMap.lastKey(),
+                        askMap.isEmpty() ? null : askMap.lastKey());
+                // Show bid and ask maps
+                showMapWithoutLocking(Side.BUY);
+                showMapWithoutLocking(Side.SELL);
+                log.debug("\n");
+            } finally {
+                askLock.readLock().unlock();
+            }
+        } finally {
+            bidLock.readLock().unlock();
+        }
     }
 
     public String getStockNo() {
@@ -98,48 +191,21 @@ public class OrderBook {
     }
 
     /**
-     * Displays information related to orders in the specified order book based on the given buyOrSell parameter.
-     * This method prints details such as stock number, description, best and last price, and order information at different price levels.
+     * Provides access to the read-write lock associated with the bid order book.
      *
-     * @param buyOrSell the indicator for whether the operation is for buying ("B") or selling ("S")
+     * @return the ReentrantReadWriteLock used to control read and write access to the bid order book
      */
-    public void showMapWithoutLocking(String buyOrSell) {
-        ConcurrentSkipListMap<BigDecimal, LinkedList<Order>> orderMap;
-        if (Side.getByValue(buyOrSell) == Side.BUY) {
-            orderMap = bidMap;
-        } else {
-            orderMap = askMap;
-        }
-
-        if (orderMap.isEmpty())
-            return;
-        log.debug("{}-{} {}", this.stockNo, this.desc, buyOrSell);
-        log.debug("the first price: {}", orderMap.firstKey());
-        log.debug("the last price: {}", orderMap.lastKey());
-        for (Entry<BigDecimal, LinkedList<Order>> entry : orderMap.entrySet()) {
-            log.debug("Orders of {} at price level {} ", stockNo, entry.getKey());
-            if (entry.getValue() == null) {
-                log.error("Empty list of orders at price level {} ", entry.getKey());
-            }
-            entry.getValue().forEach(a -> log.debug("{}-{} {}@{} ", a.getBrokerID(), a.getClientOrdID(), a.getRemainingQty(), a.getPrice().get()));
-            entry.getValue().forEach(a -> { if (a.getPrice().get().compareTo(entry.getKey()) != 0)
-                log.error("Doesn't match {}: {}-{} {}@{} ", entry.getKey(), a.getBrokerID(), a.getClientOrdID(), a.getRemainingQty(), a.getPrice().get());});
-//            log.debug("The time of head is {}", Objects.requireNonNull(entry.getValue().peek()).getCreatedDateTime());
-        }
+    public ReentrantReadWriteLock getBidLock() {
+        return bidLock;
     }
 
-    public void checkAndCleanUpPriceLevel(BigDecimal price, Side side) {
-        if (price == null || side == null) {
-            log.error("Null price or side in checkAndCleanUpPriceLevel");
-            return;
-        }
-
-        ConcurrentSkipListMap<BigDecimal, LinkedList<Order>> orderMap = (side == Side.BUY) ? bidMap : askMap;
-        // Clean up empty price levels
-        LinkedList<Order> orderList = orderMap.get(price);
-        if (orderList != null && orderList.isEmpty()) {
-            orderMap.remove(price);
-        }
+    /**
+     * Provides access to the read-write lock associated with the ask order book.
+     *
+     * @return the ReentrantReadWriteLock used to control read and write access to the ask order book
+     */
+    public ReentrantReadWriteLock getAskLock() {
+        return askLock;
     }
 
     /**
@@ -162,37 +228,5 @@ public class OrderBook {
         return askMap;
     }
 
-
-    public void showMap() {
-        // Acquire locks in a consistent order
-        bidLock.readLock().lock();
-        try {
-            askLock.readLock().lock();
-            try {
-                // Show the maps
-                log.debug("Order Map of {} Best bid: {} Best ask: {}",
-                         stockNo,
-                         bidMap.isEmpty() ? null : bidMap.lastKey(),
-                         askMap.isEmpty() ? null : askMap.lastKey());
-                // Show bid and ask maps
-                showMapWithoutLocking(Side.BUY.value);
-                showMapWithoutLocking(Side.SELL.value);
-                log.debug("\n");
-            } finally {
-                askLock.readLock().unlock();
-            }
-        } finally {
-            bidLock.readLock().unlock();
-        }
-    }
-
-
-    public ReentrantReadWriteLock getBidLock() {
-        return bidLock;
-    }
-
-    public ReentrantReadWriteLock getAskLock() {
-        return askLock;
-    }
 
 }

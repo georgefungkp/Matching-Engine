@@ -10,8 +10,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Objects;
 import java.util.concurrent.LinkedBlockingQueue;
-
 import static util.ReadConfig.dotenv;
 
 public class MarketDataJob implements Runnable {
@@ -19,7 +19,6 @@ public class MarketDataJob implements Runnable {
     private final LinkedBlockingQueue<MarketData> marketDataQueue;
     FileChannelService fileChannelService;
     private boolean listening = true;
-    private boolean writeToFile = false;
 
     public MarketDataJob(LinkedBlockingQueue<MarketData> marketDataQueue, FileChannelService fileChannelService) {
         this.marketDataQueue = marketDataQueue;
@@ -40,6 +39,7 @@ public class MarketDataJob implements Runnable {
 
                 Path path = Paths.get(dotenv.get("marketData") + "_" + data.stockNo() + "_"
                         + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + ".txt");
+                boolean writeToFile = Objects.equals(dotenv.get("isWriteToFile"), "true");
                 if (writeToFile && fileChannelService.writeMarketDataToFile(data, path) ==0)
                     log.error("Cannot write log to {}", path);
             } catch (InterruptedException | IOException e) {

@@ -23,7 +23,7 @@ public class LobsterDataLoader {
     private static final int recordsToBeLoaded = -1;
 
     public static void main(String[] args) throws IOException {
-        String fileName = "AMZN_2012-06-21_34200000_57600000_message_10.csv";
+        String fileName = "APPL_2012-06-21_34200000_57600000_message_10.csv";
         String filePath = "data sources/lobster/";
 //        String fileName = "00001_message.csv";
 //        String filePath = "data sources/00001/";
