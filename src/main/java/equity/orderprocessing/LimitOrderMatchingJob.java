@@ -12,8 +12,8 @@ import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.LinkedList;
 import java.util.Map.Entry;
+import java.util.NavigableMap;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -29,8 +29,8 @@ public class LimitOrderMatchingJob implements Runnable {
     private static final int PROCESSING_DELAY_MS = 1;
     private final String stockNo;
     private final OrderBook orderBook;
-    private final ConcurrentSkipListMap<BigDecimal, LinkedList<Order>> bidMap;
-    private final ConcurrentSkipListMap<BigDecimal, LinkedList<Order>> askMap;
+    private final NavigableMap<BigDecimal, LinkedList<Order>> bidMap;
+    private final NavigableMap<BigDecimal, LinkedList<Order>> askMap;
     private final LinkedBlockingQueue<MarketData> marketDataQueue;
     private final LinkedBlockingQueue<Trade> resultingTradeQueue;
     private final OrderProcessingJob orderProcessingJob;

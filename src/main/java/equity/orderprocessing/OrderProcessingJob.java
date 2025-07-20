@@ -11,9 +11,9 @@ import org.jetbrains.annotations.NotNull;
 import java.math.BigDecimal;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -24,16 +24,12 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * to the appropriate order book. It handles order creation, deletion, and updates, ensuring
  * thread-safe modifications to the order books. Each order is added to either the bid or ask
  * side of the order book based on its buy/sell direction.
- *
+ * <p>
  * This class runs as a separate thread, continuously monitoring the order queue for new orders.
  */
 public class OrderProcessingJob implements Runnable {
     private static final Logger log = LogManager.getLogger(OrderProcessingJob.class);
     private static final boolean LOG_ENABLED = true;
-    private static final String BUY_ORDER = "B";
-    private static final String SELL_ORDER = "S";
-    private static final String MARKET_ORDER = "M";
-
     private final LinkedBlockingQueue<Order> orderQueue;
     private final Map<String, OrderBook> orderBooks;
     private final ConcurrentHashMap<String, Order> orderObjMapper;
@@ -69,7 +65,7 @@ public class OrderProcessingJob implements Runnable {
         Objects.requireNonNull(order, "Order cannot be null");
 
         // Declare variables at the top of the method
-        ConcurrentSkipListMap<BigDecimal, LinkedList<Order>> orderMap;
+        NavigableMap<BigDecimal, LinkedList<Order>> orderMap;
         ReentrantReadWriteLock readWriteLock;
 
         // Get the order book for this stock
@@ -106,13 +102,8 @@ public class OrderProcessingJob implements Runnable {
         try {
             BigDecimal orderPrice = order.getPrice().get();
             if (orderMap.containsKey(orderPrice)) {
-                // Add to the existing price level
-                LinkedList<Order> orderList = orderMap.get(orderPrice);
-                if (orderList == null) {
-                    // Create new list if null
-                    orderList = new LinkedList<>();
-                    orderMap.put(orderPrice, orderList);
-                }
+                // Add to the existing price level. Create a new list if null
+                LinkedList<Order> orderList = orderMap.computeIfAbsent(orderPrice, k -> new LinkedList<>());
 
                 if (order.isMarketOrder()) {
                     // Market orders go to the front of the queue (FIFO)
@@ -163,7 +154,7 @@ public class OrderProcessingJob implements Runnable {
      */
     public boolean removeOrder(String brokerID, String clientOrdId, boolean isRetain) {
         // Declare variables at the top of the method
-        ConcurrentSkipListMap<BigDecimal, LinkedList<Order>> orderMap;
+        NavigableMap<BigDecimal, LinkedList<Order>> orderMap;
         ReentrantReadWriteLock readWriteLock;
 
         Order order = orderObjMapper.get(brokerID + "-" + clientOrdId);

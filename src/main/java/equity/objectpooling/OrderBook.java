@@ -8,7 +8,8 @@ import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.NavigableMap;
+import java.util.TreeMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 
@@ -21,9 +22,9 @@ public class OrderBook {
     private static final Logger log = LogManager.getLogger(OrderBook.class);
     // Each price has its own list of the brokers
     // Bid order book
-    private final ConcurrentSkipListMap<BigDecimal, LinkedList<Order>> bidMap = new ConcurrentSkipListMap<>();
+    private final NavigableMap<BigDecimal, LinkedList<Order>> bidMap = new TreeMap<>();
     // Ask order book
-    private final ConcurrentSkipListMap<BigDecimal, LinkedList<Order>> askMap = new ConcurrentSkipListMap<>(Comparator.reverseOrder());
+    private final NavigableMap<BigDecimal, LinkedList<Order>> askMap = new TreeMap<>(Comparator.reverseOrder());
 
     private final ReentrantReadWriteLock bidLock = new ReentrantReadWriteLock();
     private final ReentrantReadWriteLock askLock = new ReentrantReadWriteLock();
@@ -39,7 +40,7 @@ public class OrderBook {
 
 
     public String getTextFormatOfOrderBook(Side side) {
-        ConcurrentSkipListMap<BigDecimal, LinkedList<Order>> orderMap;
+        NavigableMap<BigDecimal, LinkedList<Order>> orderMap;
 
         if (side == Side.BUY) {
             orderMap = bidMap;
@@ -66,7 +67,7 @@ public class OrderBook {
      * @param side the side of the order book to display, either BUY or SELL
      */
     public void showMapWithoutLocking(Side side) {
-        ConcurrentSkipListMap<BigDecimal, LinkedList<Order>> orderMap;
+        NavigableMap<BigDecimal, LinkedList<Order>> orderMap;
         if (side == Side.BUY) {
             orderMap = bidMap;
         } else {
@@ -98,7 +99,7 @@ public class OrderBook {
             return;
         }
 
-        ConcurrentSkipListMap<BigDecimal, LinkedList<Order>> orderMap = (side == Side.BUY) ? bidMap : askMap;
+        NavigableMap<BigDecimal, LinkedList<Order>> orderMap = (side == Side.BUY) ? bidMap : askMap;
         // Clean up empty price levels
         LinkedList<Order> orderList = orderMap.get(price);
         if (orderList != null && orderList.isEmpty()) {
@@ -212,9 +213,9 @@ public class OrderBook {
      * Retrieves the bid order book map, which is a sorted concurrent map with bid prices as keys and a list of corresponding bid orders as values.
      * The map allows for quick access to bid orders based on their price.
      *
-     * @return ConcurrentSkipListMap containing bid prices and corresponding bid orders
+     * @return NavigableMap containing bid prices and corresponding bid orders
      */
-    public ConcurrentSkipListMap<BigDecimal, LinkedList<Order>> getBidMap() {
+    public NavigableMap<BigDecimal, LinkedList<Order>> getBidMap() {
         return bidMap;
     }
 
@@ -222,9 +223,9 @@ public class OrderBook {
      * Retrieves the ask order book map, which is a sorted concurrent map with ask prices as keys and a list of corresponding ask orders as values.
      * The map allows for quick access to ask orders based on their price.
      *
-     * @return ConcurrentSkipListMap containing ask prices and corresponding ask orders
+     * @return NavigableMap containing ask prices and corresponding ask orders
      */
-    public ConcurrentSkipListMap<BigDecimal, LinkedList<Order>> getAskMap() {
+    public NavigableMap<BigDecimal, LinkedList<Order>> getAskMap() {
         return askMap;
     }
 
