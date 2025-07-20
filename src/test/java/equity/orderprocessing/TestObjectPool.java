@@ -32,6 +32,7 @@ import static util.ReadConfig.dotenv;
 public class TestObjectPool {
     
     // Constants
+    // Refer to test.config
     private static final String STOCK_1 = "00001";
     private static final String STOCK_2 = "00002";
     private static final String BROKER_1 = "Broker 1";

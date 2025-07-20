@@ -80,7 +80,8 @@ public class Order {
         Objects.requireNonNull(clientOrdID, "Client order ID cannot be null");
         Objects.requireNonNull(orderType, "Order type cannot be null");
         Objects.requireNonNull(buyOrSell, "Side cannot be null");
-        Objects.requireNonNull(price, "Price cannot be null");
+        if (orderType.equals(OrderType.LIMIT))
+            Objects.requireNonNull(price, "Price cannot be null");
         if (quantity <= 0) {
             throw new IllegalArgumentException("Executed quantity must be positive: " + quantity);
         }
