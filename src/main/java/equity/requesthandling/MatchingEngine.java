@@ -44,6 +44,7 @@ public class MatchingEngine extends Thread {
     private static final HashMap<String, OrderBook> orderBooks = new HashMap<>();
     private static final ConcurrentHashMap<String, Order> orderObjMapper = new ConcurrentHashMap<>();
     private static final FileChannelService fileChannelService = new FileChannelService();
+    private static final int noOfThreadsPerStock = Integer.parseInt(Objects.requireNonNull(dotenv.get("noOfThreadPerStock")));
 
     private boolean listening = true;
 
@@ -74,20 +75,22 @@ public class MatchingEngine extends Thread {
             OrderBook orderBook = new OrderBook(stockId, "Stock " + stockId);
             orderBooks.put(stockId, orderBook);
 
-            LimitOrderMatchingJob matchingJob = new LimitOrderMatchingJob(
-                orderBook,
-                orderObjMapper,
-                marketDataQueue,
-                resultingTradeQueue,
-                orderProcessingJob
-            );
-
-            Thread matchingThread = new Thread(matchingJob);
-            matchingThread.setName("Matching-" + stockId);
-            matchingThread.start();
-
-            log.info("Started matching thread for stock {}", stockId);
+            for (int i = 1; i < noOfThreadsPerStock + 1; i++) {
+                LimitOrderMatchingJob matchingJob = new LimitOrderMatchingJob(
+                        orderBook,
+                        orderObjMapper,
+                        marketDataQueue,
+                        resultingTradeQueue,
+                        orderProcessingJob,
+                        i
+                );
+                Thread matchingThread = new Thread(matchingJob);
+                matchingThread.setName("Matching-" + stockId + "-Thread-" + i);
+                matchingThread.start();
+                log.info("Started matching thread {}", matchingThread.getName());
             }
+
+        }
     }
 
 

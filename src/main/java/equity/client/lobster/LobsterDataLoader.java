@@ -18,79 +18,177 @@ import java.util.Objects;
 
 import static util.ReadConfig.dotenv;
 
+/**
+ * Loads and processes LOBSTER market data files, converting them to order messages
+ * and sending them to the trading server.
+ */
 public class LobsterDataLoader {
     private static final Logger log = LogManager.getLogger(LobsterDataLoader.class);
-    private static final int recordsToBeLoaded = -1;
+    private static final BigDecimal PRICE_DIVISOR = BigDecimal.valueOf(10_000);
+    private static final int PRICE_SCALE = 4;
+    private static final int NEW_LIMIT_ORDER_TYPE = 1;
+    private static final int BUY_DIRECTION = 1;
+    private static final int EXPECTED_FIELD_COUNT = 6;
+    
+    private final String serverHost;
+    private final int serverPort;
+    private final int recordLimit;
 
-    public static void main(String[] args) throws IOException {
-        String fileName = "APPL_2012-06-21_34200000_57600000_message_10.csv";
-        String filePath = "data sources/lobster/";
-//        String fileName = "00001_message.csv";
-//        String filePath = "data sources/00001/";
-        String stockSymbol = fileName.split("_")[0];
-        String brokerID = "LOBSTER";
-
-        processLobsterFile(Paths.get(filePath, fileName), stockSymbol, brokerID);
+    public LobsterDataLoader() {
+        this(-1); // No limit by default
+    }
+    
+    public LobsterDataLoader(int recordLimit) {
+        this.serverHost = dotenv.get("server");
+        this.serverPort = Integer.parseInt(Objects.requireNonNull(dotenv.get("port_number")));
+        this.recordLimit = recordLimit;
     }
 
-    private static void processLobsterFile(Path filePath, String stockSymbol, String brokerID) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new FileReader(filePath.toFile()))) {
-            String line;
-            log.info("Processing file {}", filePath.getFileName());
-            int noOfSucessfulRec = 0;
-            while ((line = reader.readLine()) != null) {
-                String[] fields = line.split(",");
-                if (fields.length != 6)
-                    continue;
-                try {
-                    // Parse fields
-                    int type = Integer.parseInt(fields[1]);
-                    String orderId = fields[2];
-                    int size = Integer.parseInt(fields[3]);
-                    BigDecimal price = new BigDecimal(fields[4])
-                            .divide(BigDecimal.valueOf(10000), 4, RoundingMode.HALF_UP);
-                    int direction = Integer.parseInt(fields[5]);
+    public static void main(String[] args) throws IOException {
+        LobsterConfiguration config = new LobsterConfiguration(
+            "APPL_2012-06-21_34200000_57600000_message_10.csv",
+            "data sources/lobster/"
+        );
+        
+        LobsterDataLoader loader = new LobsterDataLoader();
+        loader.processFile(config);
+    }
 
-                    // Only process new limit orders (type 1)
-                    if (type != 1) continue;
-
-                    // Create an order message
-                    String message = createOrderMessage(
-                            stockSymbol,
-                            brokerID,
-                            orderId,
-                            OrderType.LIMIT.value, // Order type
-                            direction == 1 ? Side.BUY.value : Side.SELL.value, // Buy/Sell
-                            price.toString(),
-                            String.valueOf(size)
-                    );
-
-                    // Send to server
-                    log.debug(sendMessageToServer(message));
-                    noOfSucessfulRec++;
-                    // Stop processing after N records
-                    if (noOfSucessfulRec == recordsToBeLoaded)
-                        break;
-                } catch (NumberFormatException e) {
-                    System.err.println("Error processing line: " + line);
-                }
-            }
-            log.info("Complete processing file {}", filePath.getFileName());
-        }catch (Exception ex){
-            ex.printStackTrace();
+    /**
+     * Processes a LOBSTER data file and sends orders to the server.
+     */
+    public void processFile(LobsterConfiguration config) {
+        Path fullPath = Paths.get(config.getFilePath(), config.getFileName());
+        
+        try (BufferedReader reader = new BufferedReader(new FileReader(fullPath.toFile()))) {
+            log.info("Processing file: {}", fullPath.getFileName());
+            
+            int successfulRecords = processFileLines(reader, config);
+            
+            log.info("Completed processing file: {} - {} records processed", 
+                    fullPath.getFileName(), successfulRecords);
+                    
+        } catch (IOException e) {
+            log.error("Error processing file: {}", fullPath, e);
+            throw new RuntimeException("Failed to process LOBSTER file", e);
         }
     }
 
+    private int processFileLines(BufferedReader reader, LobsterConfiguration config) throws IOException {
+        String line;
+        int successfulRecords = 0;
+        
+        while ((line = reader.readLine()) != null && !isLimitReached(successfulRecords)) {
+            if (processLine(line, config)) {
+                successfulRecords++;
+            }
+        }
+        
+        return successfulRecords;
+    }
 
-    private static String sendMessageToServer(String message) throws IOException {
-        try(Socket client = new Socket(dotenv.get("server"), Integer.parseInt(Objects.requireNonNull(dotenv.get("port_number"))))){
+    private boolean processLine(String line, LobsterConfiguration config) {
+        try {
+            LobsterRecord record = parseLine(line);
+            if (record == null || !record.isNewLimitOrder()) {
+                return false;
+            }
+
+            String orderMessage = createOrderMessage(record, config);
+            String response = sendMessageToServer(orderMessage);
+            log.debug("Server response: {}", response);
+            
+            return true;
+            
+        } catch (Exception e) {
+            log.warn("Error processing line: {} - {}", line, e.getMessage());
+            return false;
+        }
+    }
+
+    private LobsterRecord parseLine(String line) {
+        String[] fields = line.split(",");
+        if (fields.length != EXPECTED_FIELD_COUNT) {
+            return null;
+        }
+
+        try {
+            return new LobsterRecord(
+                Integer.parseInt(fields[1]), // type
+                fields[2],                   // orderId
+                Integer.parseInt(fields[3]), // size
+                parsePrice(fields[4]),       // price
+                Integer.parseInt(fields[5])  // direction
+            );
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private BigDecimal parsePrice(String priceString) {
+        return new BigDecimal(priceString)
+            .divide(PRICE_DIVISOR, PRICE_SCALE, RoundingMode.HALF_UP);
+    }
+
+    private String createOrderMessage(LobsterRecord record, LobsterConfiguration config) {
+        return String.join(":", 
+            config.getStockSymbol(),
+            config.getBrokerID(),
+            record.orderId(),
+            OrderType.LIMIT.value,
+            record.isBuyOrder() ? Side.BUY.value : Side.SELL.value,
+            record.price().toString(),
+            String.valueOf(record.size())
+        );
+    }
+
+    private String sendMessageToServer(String message) throws IOException {
+        try (Socket client = new Socket(serverHost, serverPort)) {
             return Client.sendMessageToServer(client, message);
         }
     }
 
-    private static String createOrderMessage(String stockNo, String brokerId, String orderId,
-                                          String orderType, String buySell, String price, String quantity) {
-        return String.join(":", stockNo, brokerId, orderId, orderType, buySell, price, quantity);
+    private boolean isLimitReached(int processedRecords) {
+        return recordLimit > 0 && processedRecords >= recordLimit;
     }
 
+    /**
+     * Configuration class for LOBSTER data processing.
+     */
+    public static class LobsterConfiguration {
+        private final String fileName;
+        private final String filePath;
+        private final String stockSymbol;
+        private final String brokerID;
+
+        public LobsterConfiguration(String fileName, String filePath) {
+            this.fileName = fileName;
+            this.filePath = filePath;
+            this.stockSymbol = extractStockSymbol(fileName);
+            this.brokerID = "LOBSTER";
+        }
+
+        private String extractStockSymbol(String fileName) {
+            return fileName.split("_")[0];
+        }
+
+        public String getFileName() { return fileName; }
+        public String getFilePath() { return filePath; }
+        public String getStockSymbol() { return stockSymbol; }
+        public String getBrokerID() { return brokerID; }
+    }
+
+        /**
+         * Represents a parsed LOBSTER record.
+         */
+        private record LobsterRecord(int type, String orderId, int size, BigDecimal price, int direction) {
+
+        public boolean isNewLimitOrder() {
+                return type == NEW_LIMIT_ORDER_TYPE;
+            }
+
+            public boolean isBuyOrder() {
+                return direction == BUY_DIRECTION;
+            }
+        }
 }

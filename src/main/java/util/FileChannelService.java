@@ -18,7 +18,7 @@ public class FileChannelService {
     private static final Logger log = LogManager.getLogger(FileChannelService.class);
 
     public int writeTradeToFile(Trade tradeData, Path path) throws IOException {
-        // Trade seq ID, Stock No, Bid Broker ID, Bid Order ID, Sell Broker ID, Sell order IDs, Executed Price, Qty, Executed Time\
+        // Trade seq ID, Stock No, Bid Broker ID, Bid Order ID, Sell Broker ID, Sell order IDs, Executed Price, Qty, Executed Time
         String message = String.format("%s, %s,%s,%s,%s,%s,%s,%s,%s,%s,%s\r\n",
                 tradeData.getTradeSeqNo(),
                 tradeData.getStockNo(),

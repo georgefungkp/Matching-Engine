@@ -75,7 +75,7 @@ public class OrderProcessingJob implements Runnable {
             return;
         }
 
-        // Handle market orders - set price based on best available in an opposite book BEFORE acquiring any locks
+        // Handle market orders - set price based on the best available in an opposite book BEFORE acquiring any locks
         if (order.isMarketOrder()) {
             BigDecimal price = order.isBuyOrder() ? orderBook.getBestAsk() : orderBook.getBestBid();
             order.setPrice(price);
@@ -127,8 +127,8 @@ public class OrderProcessingJob implements Runnable {
                     Side.getByValue(order.getBuyOrSell()),
                     order.getBrokerID(),
                     order.getClientOrdID(),
-                    order.getBuyOrSell(), 
-                    order.getOrderType(), 
+                    order.getBuyOrSell(),
+                    order.getOrderType(),
                     order.getPrice().get(),
                     order.getQuantity().get());
         } finally {
@@ -144,7 +144,7 @@ public class OrderProcessingJob implements Runnable {
 
     /**
      * Removes the order identified by the broker ID and client order ID from the corresponding order book.
-     * If the order is found and successfully removed, it is also removed from the order object mapper 
+     * If the order is found and successfully removed, it is also removed from the order object mapper
      * and returned to the order pool.
      *
      * @param brokerID the broker ID of the order to be removed
@@ -207,8 +207,8 @@ public class OrderProcessingJob implements Runnable {
                     orderMap.remove(orderPrice);
                 }
 
-                log.info("Removed order: {}-{} {} @ ${}", 
-                        order.getBrokerID(), order.getClientOrdID(), 
+                log.info("Removed order: {}-{} {} @ ${}",
+                        order.getBrokerID(), order.getClientOrdID(),
                         order.getBuyOrSell(), orderPrice);
             }
         } finally {
