@@ -47,15 +47,21 @@ public class LimitOrderMatchingJob implements Runnable {
                                  LinkedBlockingQueue<MarketData> marketDataQueue,
                                  LinkedBlockingQueue<Trade> resultingTradeQueue,
                                  OrderProcessingJob orderProcessingJob) {
+        this(orderBook, orderObjMapper, marketDataQueue, resultingTradeQueue, orderProcessingJob, 1);
+    }
+
+    public LimitOrderMatchingJob(OrderBook orderBook, ConcurrentHashMap<String, Order> orderObjMapper,
+                                 LinkedBlockingQueue<MarketData> marketDataQueue,
+                                 LinkedBlockingQueue<Trade> resultingTradeQueue,
+                                 OrderProcessingJob orderProcessingJob, int num) {
         this.orderBook = orderBook;
         this.stockNo = orderBook.getStockNo();
         this.marketDataQueue = marketDataQueue;
         this.resultingTradeQueue = resultingTradeQueue;
         this.orderObjMapper = orderObjMapper;
         this.orderProcessingJob = orderProcessingJob;
-        log.debug("LimitOrderMatchingJob created for stock {}", stockNo);
+//        log.debug("LimitOrderMatchingJob-{} created for stock {}", num, stockNo);
     }
-
     /**
      * Main processing loop that continuously checks for and executes matching orders.
      * The thread pauses briefly between cycles to prevent CPU saturation.
@@ -84,7 +90,7 @@ public class LimitOrderMatchingJob implements Runnable {
      * This method checks if either the bid or ask map is empty or if the prices do not meet the matching criteria.
      *
      * @return true if order matching should be skipped (either the bid or ask map is empty,
-     * or the best bid price is less than the best ask price), false otherwise
+     * or the best bid price is lower than the best ask price), false otherwise
      */
     private boolean shouldSkipMatching() {
         NavigableMap<BigDecimal, LinkedList<Order>> bidMap = orderBook.getBidMap();
@@ -239,7 +245,7 @@ public class LimitOrderMatchingJob implements Runnable {
             return;
         }
 
-        TradeExecution tradeExecution = executeTradeUnderLocks();
+        TradeExecution tradeExecution = executeTradeWithoutLocks();
         if (tradeExecution != null) {
             sendMarketDataUpdate(tradeExecution.tradePrice());
         }
@@ -251,30 +257,22 @@ public class LimitOrderMatchingJob implements Runnable {
      * @return TradeExecution details if a trade was executed, null otherwise
      * @throws InterruptedException if interrupted while adding to queue
      */
-    private TradeExecution executeTradeUnderLocks() throws InterruptedException {
+    private TradeExecution executeTradeWithoutLocks() throws InterruptedException {
         NavigableMap<BigDecimal, LinkedList<Order>> bidMap = orderBook.getBidMap();
         NavigableMap<BigDecimal, LinkedList<Order>> askMap = orderBook.getAskMap();
-
-        // Acquire bid lock first to prevent deadlocks
-        orderBook.getBidLock().writeLock().lock();
-        try {
-            // Then acquire ask lock
-            orderBook.getAskLock().writeLock().lock();
-            try {
-                // Check again with locks held
-                if (shouldSkipMatching()) {
-                    return null;
-                }
-
-                return processMatchingOrders(bidMap, askMap);
-            } finally {
-                // Always release ask lock before bid lock
-                orderBook.getAskLock().writeLock().unlock();
-            }
-        } finally {
-            // Always release bid lock
-            orderBook.getBidLock().writeLock().unlock();
+//        PriceLevel bestBid = bids.firstEntry().getValue();
+//        PriceLevel bestAsk = asks.firstEntry().getValue();
+//        // Potential race condition here
+//        if (bestBid.getPrice() < bestAsk.getPrice()) break;
+//
+//        Order bid = bestBid.getFirstOrder();
+//        Order ask = bestAsk.getFirstOrder();
+        // Check again with locks held
+        if (shouldSkipMatching()) {
+            return null;
         }
+
+        return processMatchingOrders(bidMap, askMap);
     }
 
     /**
