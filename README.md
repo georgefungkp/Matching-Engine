@@ -40,6 +40,7 @@ This project implements a Matching Engine, a key component in trading platforms 
  - After order matching, trade and market data are sent to Client. 
  - Extensible and maintainable code
  - Supports internal message format as well as FIX message format
+ - High-performance logging with Log4j2 Async Logger
 
 ## Getting Started
 ![Diagram](images/Matching%20Engine%20Component%20Diagram.png)
@@ -152,11 +153,13 @@ Conclusions
 So, I choose to use <b>ConcurrenctSkipListMap</b> to replace TreeMap as it is good for individual atomic operations. All basic operations (put, get, remove) are thread-safe by design 
 so that it provides atomicity for single operations.
 <img src="images/TreeMapvsConcurrentSkipListMap.jpg" width="500" height="200">
-
-
+- I use **AsyncLogger + synchronous appenders** for best end-to-end performance. **AsyncAppender** may be used for particularly slow/risky sinks (e.g., network/syslog).
 - Use Hashmap to record order object reference so that it's easy to amend or cancel the order. 
 - Order object pool is created so that we can minimize the number of objects and times of GC in the memory, and reduce latency of order creation.
 - Difference exchanges give different priority to market order. In this design, the market order is treated as the best available order and is executed first.
+
+### Asynchronous Logging (Log4j2)
+This project can use Log4j2 Async Loggers for low-latency, high-throughput logging. Async logging offloads message formatting and I/O to background threads using the LMAX Disruptor ring buffer.
 
 ### Design Patterns
 I have applied several common design patterns in my system design. 
