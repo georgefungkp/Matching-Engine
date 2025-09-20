@@ -1,24 +1,74 @@
 Configuration:
-  name: Default
   status: warn
+  name: MatchingEngineConfig
+
+  Properties:
+    Property:
+      - name: LOG_PATTERN
+        value: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"
+      - name: ROLL_SIZE
+        value: "1000MB"
+      - name: ROLL_MAX
+        value: "30"
+
   Appenders:
+    # Console Appender
     Console:
       name: Console
       target: SYSTEM_OUT
       PatternLayout:
-        Pattern: "%d{HH:mm:ss} [%t] %-5level %logger{36} at Line No %L - %msg%n"
+        Pattern: "${LOG_PATTERN}"
+
+    # Use RollingFile appenders (not AsyncFile)
     RollingFile:
-      name: RollingFile
-      fileName: logs/app.log
-      filePattern: logs/old/app-%d{yyyyMMdd_HHmmss}.log
-      PatternLayout:
-        pattern: "%d{yyyy-MM-dd HH:mm:ss} [%t] %-5level %logger{36} at Line No %L - %msg%n"
-      Policies:
-        OnStartupTriggeringPolicy: {}
+      - name: AppFile
+        fileName: logs/matching-engine.log
+        filePattern: logs/archive/app/matching-engine-%d{yyyy-MM-dd}-%i.log
+        PatternLayout:
+          Pattern: "${LOG_PATTERN}"
+        Policies:
+          OnStartupTriggeringPolicy: {}
+          TimeBasedTriggeringPolicy:
+            interval: 1
+            modulate: true
+          SizeBasedTriggeringPolicy:
+            size: "${ROLL_SIZE}"
+        DefaultRolloverStrategy:
+          max: "${ROLL_MAX}"
+
+      - name: OrderFile
+        fileName: logs/orders.log
+        filePattern: logs/archive/orders/orders-%d{yyyy-MM-dd}-%i.log
+        PatternLayout:
+          Pattern: "${LOG_PATTERN}"
+        Policies:
+          OnStartupTriggeringPolicy: {}
+          TimeBasedTriggeringPolicy:
+            interval: 1
+            modulate: true
+          SizeBasedTriggeringPolicy:
+            size: "${ROLL_SIZE}"
+        DefaultRolloverStrategy:
+          max: "${ROLL_MAX}"
+
 
   Loggers:
+    AsyncLogger:
+      - name: equity.requesthandling.MatchingEngine
+        level: DEBUG
+        additivity: false
+        AppenderRef:
+          - ref: AppFile
+          - ref: Console
+      - name: equity.orderprocessing
+        level: DEBUG
+        additivity: false
+        AppenderRef:
+          - ref: OrderFile
+          - ref: Console
+
     Root:
-      level: info
+      level: DEBUG
       AppenderRef:
+        - ref: AppFile
         - ref: Console
-        - ref: RollingFile

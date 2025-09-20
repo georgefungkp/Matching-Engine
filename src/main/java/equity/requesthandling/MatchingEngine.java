@@ -26,8 +26,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import static util.HealthCheck.printGCStats;
-import static util.HealthCheck.printJVMFlags;
+import static util.HealthCheck.*;
 import static util.ReadConfig.dotenv;
 import static util.ReadConfig.getStocks;
 
@@ -61,6 +60,7 @@ public class MatchingEngine extends Thread {
         MatchingEngine server = new MatchingEngine();
         printJVMFlags();
         printGCStats();
+        printAsyncLoggingHealthCheck();
         server.startProcessingJobs();
         server.start();
     }
