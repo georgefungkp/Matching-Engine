@@ -93,7 +93,7 @@ ZGC Configuration 1
 ```
 ZGC Configuration 2
 ```properties
--XX:+UseZGC -Xms18g -Xmx18g -XX:ConcGCThreads=12 -XX:+AlwaysPreTouch \
+-XX:+UseZGC -Xms32g -Xmx32g -XX:ConcGCThreads=12 -XX:+AlwaysPreTouch \
   -XX:+ZGenerational -XX:ZAllocationSpikeTolerance=2.0 -XX:MaxGCPauseMillis=1 -XX:ParallelGCThreads=16 -XX:ZCollectionInterval=5 -XX:ZFragmentationLimit=10
 ```
 
